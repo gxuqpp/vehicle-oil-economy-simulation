@@ -1,0 +1,1686 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>汽车经济性计算 · 教师评阅工具</title>
+<style>
+@import url('https://fonts.googleapis.com/css2?family=Noto+Serif+SC:wght@400;600;700&family=JetBrains+Mono:wght@400;500;600&family=Noto+Sans+SC:wght@300;400;500;600&display=swap');
+:root{
+  --bg:#0d1520;--surf:#152035;--surf2:#1a2840;--surf3:#1e3050;
+  --ink:#e4edf8;--ink2:#b0c8e8;--ink3:#7090b8;
+  --blue:#4d9fff;--blue2:#6db8ff;--blue-bg:#0f2040;
+  --red:#ff6b5a;--red-bg:#2a1010;
+  --green:#3ddc84;--green-bg:#0f2820;
+  --amber:#ffd166;--amber-bg:#2a2000;
+  --teal:#40d4c0;--teal-bg:#0a2028;
+  --gold:#f0c040;--gold2:#ffd060;
+  --rule:#2a3d5a;--rule2:#223050;
+  --mono:'JetBrains Mono',monospace;
+  --serif:'Noto Serif SC',serif;
+  --sans:'Microsoft YaHei','微软雅黑','Noto Sans SC',sans-serif;
+  --r:6px;--r2:10px;--sh:0 4px 20px rgba(0,0,0,.3);
+}
+*{box-sizing:border-box;margin:0;padding:0}
+body{font-family:var(--sans);background:var(--bg);color:var(--ink);font-size:16px;line-height:1.65}
+
+/* ── Header ── */
+.hdr{background:linear-gradient(135deg,#0a1628,#1a3a7e);color:#e4edf8;
+  padding:16px 28px;border-bottom:2px solid #2e4a90;display:flex;align-items:center;gap:16px}
+.hdr-logo{width:44px;height:44px;background:linear-gradient(135deg,#f0c040,#e0a020);
+  border-radius:10px;display:flex;align-items:center;justify-content:center;font-size:1.5rem;
+  box-shadow:0 2px 10px rgba(240,192,64,.3);flex-shrink:0}
+.hdr h1{font-family:var(--serif);font-size:1.25rem;font-weight:700;letter-spacing:.04em;color:#fff}
+.hdr-sub{font-size:.88rem;color:rgba(255,255,255,.72);margin-top:3px}
+.hdr-right{margin-left:auto;display:flex;align-items:center;gap:12px;flex-shrink:0}
+.run-btn{padding:9px 22px;background:var(--gold);border:none;border-radius:var(--r);
+  color:#0d1520;font-size:.95rem;font-weight:700;cursor:pointer;transition:all .15s;
+  box-shadow:0 2px 8px rgba(240,192,64,.3)}
+.run-btn:hover{background:var(--gold2)}
+.gear-sel-label{font-size:.85rem;color:rgba(255,255,255,.65)}
+#gear_type{background:#0a1628;border:1px solid #2e4a90;color:#e4edf8;
+  padding:7px 12px;border-radius:6px;font-size:.88rem;cursor:pointer}
+
+/* ── Tabs ── */
+.tabbar{background:#111d30;border-bottom:2px solid var(--rule);
+  padding:0 20px;display:flex;gap:2px;overflow-x:auto}
+.tab{padding:13px 20px;cursor:pointer;font-size:.92rem;font-weight:500;
+  color:var(--ink3);border-bottom:3px solid transparent;transition:all .15s;
+  white-space:nowrap;margin-bottom:-2px}
+.tab:hover{color:var(--ink2)}
+.tab.active{color:var(--blue);border-bottom-color:var(--blue);font-weight:700;
+  background:var(--surf);border-radius:4px 4px 0 0}
+
+/* ── Layout ── */
+.layout{display:grid;grid-template-columns:360px 1fr;height:calc(100vh - 108px)}
+
+/* ── Left panel ── */
+.left{background:#141f33;border-right:1px solid var(--rule);overflow-y:auto;padding:12px}
+.group{background:var(--surf);border:1px solid var(--rule);border-radius:var(--r2);
+  overflow:hidden;margin-bottom:10px}
+.group-hdr{background:#0a1628;color:#c8dcff;padding:9px 14px;
+  font-size:.82rem;font-weight:700;letter-spacing:.06em;display:flex;align-items:center;gap:8px;
+  border-bottom:1px solid var(--rule);cursor:pointer;user-select:none}
+.group-hdr .dot{width:8px;height:8px;border-radius:50%;flex-shrink:0}
+.group-hdr .collapse-arrow{margin-left:auto;font-size:.75rem;color:var(--ink3);transition:.2s}
+.group-body{transition:.2s}
+.group.collapsed .group-body{display:none}
+.group.collapsed .collapse-arrow{transform:rotate(-90deg)}
+
+.param-grid{display:grid;grid-template-columns:1fr 1fr;gap:1px;background:var(--rule)}
+.pf{background:var(--surf);padding:8px 10px;display:flex;flex-direction:column;gap:3px}
+.pf.full{grid-column:1/-1}
+.pl{font-size:.78rem;color:var(--ink3);font-weight:500;display:flex;justify-content:space-between;align-items:center}
+.pu{font-family:var(--mono);font-size:.72rem;color:var(--ink3)}
+.pf input,.pf select{width:100%;background:#0d1520;border:1px solid var(--rule);
+  border-radius:var(--r);padding:6px 9px;color:var(--ink);font-family:var(--mono);
+  font-size:.88rem;outline:none;transition:border-color .15s}
+.pf input:focus,.pf select:focus{border-color:var(--blue)}
+.gear-table{width:100%;font-size:.85rem;border-collapse:collapse}
+.gear-table th{background:#0a1628;color:#c8dcff;padding:7px 10px;font-size:.78rem;font-weight:700;border-bottom:1px solid var(--rule)}
+.gear-table td{padding:6px 10px;border-bottom:1px solid var(--rule2);font-family:var(--mono);text-align:center;font-size:.85rem}
+
+/* ── Polynomial panel ── */
+.poly-toolbar{display:flex;gap:6px;align-items:center;padding:10px 12px;
+  border-bottom:1px solid var(--rule);flex-wrap:wrap}
+.poly-toolbar select{background:#0d1520;border:1px solid var(--rule);color:var(--ink);
+  padding:5px 8px;border-radius:var(--r);font-size:.8rem;font-family:var(--mono);cursor:pointer}
+.poly-btn{padding:5px 11px;border:none;border-radius:var(--r);font-size:.78rem;
+  font-weight:700;cursor:pointer;transition:all .15s;white-space:nowrap}
+.poly-btn.fit{background:#0f2840;color:var(--blue);border:1px solid var(--blue)}
+.poly-btn.fit:hover{background:var(--blue-bg)}
+.poly-btn.matlab{background:#1a2a0f;color:var(--green);border:1px solid var(--green)}
+.poly-btn.matlab:hover{background:var(--green-bg)}
+.poly-btn.add{background:#1a2010;color:var(--teal);border:1px solid var(--teal)}
+.poly-btn.add:hover{background:var(--teal-bg)}
+.poly-btn.del{background:#2a0f0f;color:var(--red);border:1px solid var(--red)}
+
+.poly-table-wrap{overflow-x:auto;padding:8px 12px 12px}
+.poly-table{width:100%;border-collapse:collapse;font-size:.8rem}
+.poly-table th{background:#0a1628;color:#c8dcff;padding:6px 5px;text-align:center;
+  border:1px solid var(--rule);font-size:.75rem;font-weight:700;white-space:nowrap}
+.poly-table th.colN{background:#0a2040;color:var(--amber)}
+.poly-table th.colC{background:#0a1628;color:var(--blue2)}
+.poly-table th.colR{background:#0a2810;color:var(--green)}
+.poly-table td{padding:4px 3px;border:1px solid var(--rule2);vertical-align:middle}
+.poly-table td input{width:100%;background:#0d1520;border:1px solid transparent;
+  border-radius:4px;padding:4px 5px;color:var(--ink);font-family:var(--mono);
+  font-size:.78rem;text-align:right;outline:none;min-width:0}
+.poly-table td input:focus{border-color:var(--blue);background:#0f2040}
+.poly-table td input.n-input{color:var(--amber);font-weight:700;text-align:center}
+.poly-table td.r2-cell{text-align:center;font-family:var(--mono);font-size:.78rem}
+.r2-hi{color:var(--green)}
+.r2-mid{color:var(--amber)}
+.r2-lo{color:var(--red)}
+.poly-table td.del-cell{text-align:center}
+.del-row-btn{background:none;border:none;color:#5a3030;cursor:pointer;font-size:.9rem;
+  transition:.15s;padding:0 4px}
+.del-row-btn:hover{color:var(--red)}
+.poly-table td.pemax-cell{text-align:right;font-family:var(--mono);font-size:.75rem;color:var(--ink3)}
+
+.poly-formula-hint{padding:8px 12px;font-family:var(--mono);font-size:.78rem;
+  color:var(--ink3);background:#0a1628;border-top:1px solid var(--rule);line-height:1.8}
+.poly-formula-hint span.hl{color:var(--blue2)}
+
+/* Modal / export box */
+.export-overlay{display:none;position:fixed;inset:0;background:rgba(0,0,0,.7);z-index:1000;
+  align-items:center;justify-content:center}
+.export-overlay.show{display:flex}
+.export-box{background:#152035;border:1px solid var(--blue);border-radius:12px;
+  padding:20px;width:90%;max-width:700px;max-height:80vh;display:flex;flex-direction:column}
+.export-box h3{font-family:var(--serif);color:var(--blue2);margin-bottom:12px;font-size:1.1rem}
+.export-box textarea{flex:1;background:#0a1628;border:1px solid var(--rule);border-radius:var(--r);
+  color:var(--green);font-family:var(--mono);font-size:.82rem;padding:12px;
+  resize:none;outline:none;min-height:300px;line-height:1.7}
+.export-btns{display:flex;gap:8px;margin-top:12px}
+.export-copy-btn{padding:8px 20px;background:var(--blue);border:none;border-radius:var(--r);
+  color:#fff;font-weight:700;cursor:pointer;font-size:.9rem}
+.export-close-btn{padding:8px 20px;background:#1e3050;border:1px solid var(--rule);
+  border-radius:var(--r);color:var(--ink2);cursor:pointer;font-size:.9rem}
+
+/* ── Right: results ── */
+.right{overflow-y:auto;padding:18px;display:flex;flex-direction:column;gap:14px}
+.page{display:none;flex-direction:column;gap:14px}
+.page.active{display:flex}
+.chart-box{background:var(--surf);border:1px solid var(--rule);border-radius:var(--r2);
+  padding:16px 18px;box-shadow:var(--sh)}
+.chart-title{font-family:var(--serif);font-size:1.05rem;font-weight:600;color:var(--ink);
+  margin-bottom:12px;display:flex;align-items:center;gap:10px;flex-wrap:wrap}
+.ct-tag{font-size:.75rem;font-family:var(--mono);background:var(--blue-bg);
+  color:var(--blue2);padding:3px 9px;border-radius:4px;font-weight:600;border:1px solid #2a4a80}
+
+.cards{display:grid;grid-template-columns:repeat(auto-fill,minmax(195px,1fr));gap:10px}
+.card{background:var(--surf);border:1px solid var(--rule);border-radius:var(--r2);
+  padding:14px 16px;position:relative;overflow:hidden;box-shadow:var(--sh)}
+.card::before{content:'';position:absolute;top:0;left:0;right:0;height:3px}
+.card.blue::before{background:var(--blue)}
+.card.green::before{background:var(--green)}
+.card.amber::before{background:var(--amber)}
+.card.red::before{background:var(--red)}
+.card.teal::before{background:var(--teal)}
+.card-label{font-size:.8rem;color:var(--ink3);font-weight:600;margin-bottom:6px;letter-spacing:.04em}
+.card-val{font-family:var(--mono);font-size:1.55rem;font-weight:700;line-height:1;color:var(--blue)}
+.card.green .card-val{color:var(--green)}.card.amber .card-val{color:var(--amber)}
+.card.red .card-val{color:var(--red)}.card.teal .card-val{color:var(--teal)}
+.card-unit{font-size:.78rem;color:var(--ink3);font-weight:400;margin-left:3px}
+.card-note{font-size:.78rem;color:var(--ink3);margin-top:5px}
+
+.fbox{background:#0a1628;border-left:4px solid var(--blue);border-radius:0 var(--r) var(--r) 0;
+  padding:12px 16px;font-family:var(--mono);font-size:.88rem;color:var(--ink2);
+  line-height:2;margin:6px 0;white-space:pre-wrap}
+.fv{color:var(--red);font-weight:700}.fr{color:var(--green);font-weight:700}
+.fc{color:var(--ink3);font-style:italic}
+
+.wc-table{width:100%;border-collapse:collapse;font-size:.92rem}
+.wc-table th{background:#0a1628;color:#c8dcff;padding:9px 12px;text-align:center;
+  font-size:.85rem;font-weight:700;letter-spacing:.04em;border:1px solid var(--rule)}
+.wc-table td{padding:8px 12px;border:1px solid var(--rule2);text-align:center;
+  font-family:var(--mono);font-size:.9rem}
+.wc-table tr:nth-child(even) td{background:#111d30}
+.wc-table td.label{font-family:var(--sans);text-align:left;font-weight:500;color:var(--ink2)}
+.wc-table td.hi{color:var(--blue);font-weight:700}
+.wc-table tfoot td{background:var(--blue-bg);color:var(--blue);font-weight:700;
+  border-top:2px solid var(--blue);font-size:.95rem}
+
+.answer-section{background:var(--surf);border:1px solid var(--rule);border-radius:var(--r2);overflow:hidden}
+.answer-hdr{background:#0a1628;padding:11px 16px;border-bottom:1px solid var(--rule);
+  font-family:var(--serif);font-size:1rem;font-weight:600;display:flex;align-items:center;gap:10px;color:var(--blue2)}
+.answer-body{padding:14px 16px}
+.check-row{display:flex;align-items:center;gap:12px;padding:8px 0;border-bottom:1px solid var(--rule2)}
+.check-row:last-child{border-bottom:none}
+.check-label{width:200px;font-size:.9rem;color:var(--ink2);font-weight:500}
+.check-val{font-family:var(--mono);font-size:.98rem;font-weight:700;color:var(--blue);min-width:110px}
+.check-ref{font-size:.82rem;color:var(--ink3);margin-left:4px}
+
+#chart_universal_3d,#chart_universal_2d{width:100%}
+#chart_universal_3d{height:500px}
+#chart_universal_2d{height:380px}
+
+/* ── Cycle editor ── */
+.cy-preset-btn{padding:4px 10px;border-radius:var(--r);font-size:.76rem;font-weight:700;
+  cursor:pointer;border:1px solid var(--teal);background:var(--teal-bg);color:var(--teal);
+  transition:.15s;white-space:nowrap}
+.cy-preset-btn:hover{background:#0f3530}
+.cy-table{width:100%;border-collapse:collapse;font-size:.78rem;min-width:340px}
+.cy-table th{background:#0a1628;color:#c8dcff;padding:5px 4px;text-align:center;
+  border:1px solid var(--rule);font-size:.73rem;font-weight:700;line-height:1.3}
+.cy-table td{padding:3px 2px;border:1px solid var(--rule2);vertical-align:middle}
+.cy-table td.idx-cell{text-align:center;font-family:var(--mono);font-size:.72rem;color:var(--ink3)}
+.cy-table td input,.cy-table td select{width:100%;background:#0d1520;border:1px solid transparent;
+  border-radius:3px;padding:4px 4px;color:var(--ink);font-family:var(--mono);
+  font-size:.78rem;text-align:center;outline:none;min-width:0}
+.cy-table td input:focus,.cy-table td select:focus{border-color:var(--teal);background:#0a2028}
+.cy-table td select{cursor:pointer}
+.cy-type-const select,.cy-type-const input{border-color:#1a3a50}
+.cy-type-accel select,.cy-type-accel input{border-color:#1a3a20}
+.cy-type-decel select,.cy-type-decel input{border-color:#3a2010}
+.cy-type-idle select,.cy-type-idle input{border-color:#2a1a40}
+.cy-del-btn{background:none;border:none;color:#4a2828;cursor:pointer;
+  font-size:.9rem;padding:0 3px;transition:.15s;display:block;margin:auto}
+.cy-del-btn:hover{color:var(--red)}
+.cy-type-badge{display:inline-block;padding:2px 5px;border-radius:3px;
+  font-size:.68rem;font-weight:700;font-family:var(--mono)}
+.badge-const{background:#0f2840;color:#4d9fff}
+.badge-accel{background:#0f2810;color:#3ddc84}
+.badge-decel{background:#2a1a08;color:#ffd166}
+.badge-idle{background:#1a1040;color:#a78bfa}
+
+::-webkit-scrollbar{width:5px;height:5px}
+::-webkit-scrollbar-track{background:var(--bg)}
+::-webkit-scrollbar-thumb{background:var(--rule);border-radius:3px}
+user-select: none
+</style>
+</head>
+<body>
+
+<div class="hdr">
+  <div class="hdr-logo">⛽</div>
+  <div>
+    <h1>汽车经济性计算 · 教师评阅工具</h1>
+    <div class="hdr-sub">汽车经济性能仿真 — 《汽车理论》第6版（余志生）&nbsp;·&nbsp;492QC-2 发动机 · 轻型货车</div>
+  </div>
+  <div class="hdr-right">
+    <span class="gear-sel-label">变速器：</span>
+    <select id="gear_type" onchange="recalcAll()">
+      <option value="5">五档变速器</option>
+      <option value="4">四档变速器</option>
+    </select>
+    <button class="run-btn" onclick="recalcAll()">▶ 重新计算</button>
+  </div>
+</div>
+
+<div class="tabbar">
+  <div class="tab active" onclick="switchTab('load')" id="tab_load">① 负荷特性</div>
+  <div class="tab" onclick="switchTab('power')" id="tab_power">② 功率平衡图</div>
+  <div class="tab" onclick="switchTab('fuel')" id="tab_fuel">③ 等速油耗</div>
+  <div class="tab" onclick="switchTab('cycle')" id="tab_cycle">④ 六工况油耗</div>
+  <div class="tab" onclick="switchTab('universal')" id="tab_universal">⑤ 万有特性(3D)</div>
+  <div class="tab" onclick="switchTab('check')" id="tab_check">⑥ 教师检查</div>
+</div>
+
+<div class="layout">
+<!-- ══ 左侧参数 ══ -->
+<div class="left">
+
+  <!-- 整车参数 -->
+  <div class="group" id="grp_vehicle">
+    <div class="group-hdr" onclick="toggleGroup('grp_vehicle')">
+      <div class="dot" style="background:#f0c040"></div>整车基本参数
+      <span class="collapse-arrow">▼</span>
+    </div>
+    <div class="group-body">
+      <div class="param-grid">
+        <div class="pf"><div class="pl">总质量 m<span class="pu">kg</span></div>
+          <input type="number" id="p_m" value="3880" step="10" onchange="recalcAll()"></div>
+        <div class="pf"><div class="pl">车轮半径 r<span class="pu">m</span></div>
+          <input type="number" id="p_r" value="0.367" step="0.001" onchange="recalcAll()"></div>
+        <div class="pf"><div class="pl">滚阻系数 f</div>
+          <input type="number" id="p_f" value="0.013" step="0.001" onchange="recalcAll()"></div>
+        <div class="pf"><div class="pl">CD·A<span class="pu">m²</span></div>
+          <input type="number" id="p_CdA" value="2.77" step="0.01" onchange="recalcAll()"></div>
+        <div class="pf"><div class="pl">传动效率 ηt<span class="pu">%</span></div>
+          <input type="number" id="p_eta" value="85" step="1" onchange="recalcAll()"></div>
+        <div class="pf"><div class="pl">主减速比 i₀</div>
+          <input type="number" id="p_i0" value="5.83" step="0.01" onchange="recalcAll()"></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- 变速器 -->
+  <div class="group" id="grp_trans">
+    <div class="group-hdr" onclick="toggleGroup('grp_trans')">
+      <div class="dot" style="background:#4d9fff"></div>变速器传动比
+      <span class="collapse-arrow">▼</span>
+    </div>
+    <div class="group-body" style="padding:10px">
+      <table class="gear-table">
+        <tr><th>档位</th><th>4档</th><th>5档</th></tr>
+        <tr><td>Ⅰ</td><td>6.09</td><td>5.56</td></tr>
+        <tr><td>Ⅱ</td><td>3.09</td><td>2.769</td></tr>
+        <tr><td>Ⅲ</td><td>1.71</td><td>1.644</td></tr>
+        <tr><td>Ⅳ</td><td>1.00</td><td>1.00</td></tr>
+        <tr><td>Ⅴ</td><td>—</td><td>0.793</td></tr>
+      </table>
+    </div>
+  </div>
+
+  <!-- 发动机外特性 -->
+  <div class="group" id="grp_engine">
+    <div class="group-hdr" onclick="toggleGroup('grp_engine')">
+      <div class="dot" style="background:#ff6b5a"></div>发动机外特性（Ttq 多项式）
+      <span class="collapse-arrow">▼</span>
+    </div>
+    <div class="group-body">
+      <div class="param-grid">
+        <div class="pf"><div class="pl">n_min<span class="pu">r/min</span></div>
+          <input type="number" id="p_nmin" value="600" step="50" onchange="recalcAll()"></div>
+        <div class="pf"><div class="pl">n_max<span class="pu">r/min</span></div>
+          <input type="number" id="p_nmax" value="4000" step="50" onchange="recalcAll()"></div>
+        <div class="pf full">
+          <div class="pl" style="margin-bottom:4px">Ttq = A+B·x+C·x²+D·x³+E·x⁴ &nbsp;<span class="pu">(x=n/1000)</span></div>
+          <div style="display:grid;grid-template-columns:1fr 1fr;gap:4px">
+            <div><div style="font-size:.7rem;color:var(--amber);margin-bottom:2px">A 常数</div>
+              <input type="number" id="tq_A" value="-19.313" step="0.001" onchange="recalcAll()"></div>
+            <div><div style="font-size:.7rem;color:var(--amber);margin-bottom:2px">B 一次</div>
+              <input type="number" id="tq_B" value="295.27" step="0.001" onchange="recalcAll()"></div>
+            <div><div style="font-size:.7rem;color:var(--amber);margin-bottom:2px">C 二次</div>
+              <input type="number" id="tq_C" value="-165.44" step="0.001" onchange="recalcAll()"></div>
+            <div><div style="font-size:.7rem;color:var(--amber);margin-bottom:2px">D 三次</div>
+              <input type="number" id="tq_D" value="40.874" step="0.001" onchange="recalcAll()"></div>
+            <div style="grid-column:1/-1"><div style="font-size:.7rem;color:var(--amber);margin-bottom:2px">E 四次</div>
+              <input type="number" id="tq_E" value="-3.8445" step="0.0001" onchange="recalcAll()"></div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ══ 负荷特性多项式 ══ -->
+  <div class="group" id="grp_poly">
+    <div class="group-hdr" onclick="toggleGroup('grp_poly')">
+      <div class="dot" style="background:#a78bfa"></div>负荷特性 be-Pe 多项式系数
+      <span class="collapse-arrow">▼</span>
+    </div>
+    <div class="group-body">
+      <!-- 工具栏 -->
+      <div class="poly-toolbar">
+        <select id="poly_deg" onchange="onDegreeChange()">
+          <option value="2">2阶 &nbsp;be=a₀+a₁Pe+a₂Pe²</option>
+          <option value="3">3阶 &nbsp;be=a₀+…+a₃Pe³</option>
+          <option value="4" selected>4阶 &nbsp;be=a₀+…+a₄Pe⁴</option>
+        </select>
+        <button class="poly-btn fit" onclick="fitFromBuiltin()" title="从内置492QC-2实验数据重新拟合">↺ 重新拟合</button>
+        <button class="poly-btn matlab" onclick="exportMatlab()" title="生成MATLAB可用代码">MATLAB导出</button>
+        <button class="poly-btn add" onclick="addSpeedRow()" title="增加一个转速行">＋行</button>
+      </div>
+      <!-- 系数表 -->
+      <div class="poly-table-wrap">
+        <table class="poly-table" id="poly_table">
+          <thead id="poly_thead"></thead>
+          <tbody id="poly_tbody"></tbody>
+        </table>
+      </div>
+      <!-- 公式提示 -->
+      <div class="poly-formula-hint" id="poly_formula_hint">
+        be(Pe) = <span class="hl">a₀</span> + <span class="hl">a₁</span>·Pe + <span class="hl">a₂</span>·Pe²<br>
+        单位：be [g/kW·h]，Pe [kW]
+      </div>
+    </div>
+  </div>
+
+  <!-- 行驶循环编辑器 -->
+  <div class="group" id="grp_cycle">
+    <div class="group-hdr" onclick="toggleGroup('grp_cycle')">
+      <div class="dot" style="background:#40d4c0"></div>行驶循环工况编辑器
+      <span id="cycle_seg_count" style="margin-left:auto;font-size:.72rem;color:var(--teal);font-weight:400"></span>
+      <span class="collapse-arrow" style="margin-left:8px">▼</span>
+    </div>
+    <div class="group-body">
+      <div style="padding:8px 10px;display:flex;flex-wrap:wrap;gap:5px;border-bottom:1px solid var(--rule)">
+        <span style="font-size:.75rem;color:var(--ink3);align-self:center;margin-right:2px">预设：</span>
+        <button class="cy-preset-btn" onclick="loadPreset('jb_top')">JB 顶档</button>
+        <button class="cy-preset-btn" onclick="loadPreset('jb_sec')">JB 次高档</button>
+        <button class="cy-preset-btn" onclick="loadPreset('nedc')">NEDC城市</button>
+        <button class="cy-preset-btn" onclick="loadPreset('empty')">清空</button>
+      </div>
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:1px;background:var(--rule)">
+        <div class="pf"><div class="pl">怠速油耗 Qid<span class="pu">单位*</span></div>
+          <input type="number" id="cy_Qid" value="0.299" step="0.001" onchange="recalcAll()"></div>
+        <div class="pf"><div class="pl">燃油重度 γ<span class="pu">N/L</span></div>
+          <input type="number" id="cy_gamma" value="7.10" step="0.01" onchange="recalcAll()"></div>
+      </div>
+      <div style="overflow-x:auto;padding:8px 8px 4px">
+        <table class="cy-table" id="cy_table">
+          <thead><tr>
+            <th style="width:18px">#</th>
+            <th style="width:64px">类型</th>
+            <th>v₁<br><small>km/h</small></th>
+            <th>v₂<br><small>km/h</small></th>
+            <th id="cy_th_param">距/加速<br><small>m / m/s²</small></th>
+            <th style="width:52px">档位</th>
+            <th style="width:18px"></th>
+          </tr></thead>
+          <tbody id="cy_tbody"></tbody>
+        </table>
+      </div>
+      <div style="padding:4px 8px 8px;display:flex;gap:6px">
+        <button class="poly-btn add" onclick="addCycleRow()" style="flex:1">＋ 添加工况段</button>
+      </div>
+      <div id="cy_summary" style="padding:6px 10px 8px;font-family:var(--mono);font-size:.78rem;
+        color:var(--ink3);border-top:1px solid var(--rule);line-height:2"></div>
+    </div>
+  </div>
+
+</div><!-- /left -->
+
+<!-- ══ 右侧结果 ══ -->
+<div class="right">
+
+<div class="page active" id="page_load">
+  <div class="cards" id="load_cards"></div>
+  <div class="chart-box">
+    <div class="chart-title">发动机负荷特性曲线（be-Pe 多项式重建）
+      <span class="ct-tag">be - Pe</span>
+      <span id="load_model_tag" style="font-size:.78rem;color:var(--green);margin-left:auto"></span>
+    </div>
+    <canvas id="chart_load" height="260"></canvas>
+  </div>
+  <div class="chart-box">
+    <div class="chart-title">发动机外特性曲线 <span class="ct-tag">Ttq / Pe - n</span></div>
+    <canvas id="chart_outer" height="200"></canvas>
+  </div>
+</div>
+
+<div class="page" id="page_power">
+  <div class="cards" id="power_cards"></div>
+  <div class="chart-box">
+    <div class="chart-title">汽车功率平衡图 <span class="ct-tag">P - u</span>
+      <span id="power_gear_label" style="font-size:.85rem;color:var(--ink3);margin-left:8px"></span>
+    </div>
+    <canvas id="chart_power" height="280"></canvas>
+  </div>
+  <div class="chart-box">
+    <div class="chart-title">各档驱动力与行驶阻力图 <span class="ct-tag">F - u</span></div>
+    <canvas id="chart_fu" height="220"></canvas>
+  </div>
+  <div id="power_formula"></div>
+</div>
+
+<div class="page" id="page_fuel">
+  <div class="cards" id="fuel_cards"></div>
+  <div class="chart-box">
+    <div class="chart-title">等速百公里油耗曲线 <span class="ct-tag">Q₁₀₀ - u</span></div>
+    <canvas id="chart_fuel" height="280"></canvas>
+  </div>
+  <div id="fuel_formula"></div>
+</div>
+
+<div class="page" id="page_cycle">
+  <div class="cards" id="cycle_cards"></div>
+  <div class="answer-section">
+    <div class="answer-hdr">📊 六工况循环行驶百公里油耗计算过程</div>
+    <div class="answer-body"><table class="wc-table" id="cycle_table"></table></div>
+  </div>
+  <div id="cycle_formula"></div>
+</div>
+
+<div class="page" id="page_universal">
+  <div class="chart-box">
+    <div class="chart-title">发动机万有特性 — 三维燃油消耗率曲面
+      <span class="ct-tag">be(n, Ttq) 3D Surface</span>
+      <span style="font-size:.8rem;color:var(--green);margin-left:auto">● 多项式重建</span>
+    </div>
+    <div id="chart_universal_3d"></div>
+  </div>
+  <div class="chart-box">
+    <div class="chart-title">万有特性等高线（俯视）<span class="ct-tag">be 等值线 Contour</span></div>
+    <div id="chart_universal_2d"></div>
+  </div>
+  <div class="fbox" id="universal_note"></div>
+</div>
+
+<div class="page" id="page_check">
+  <div class="cards" id="check_summary"></div>
+  <div class="answer-section">
+    <div class="answer-hdr">🎯 标准答案对照（教师用）</div>
+    <div class="answer-body" id="check_detail"></div>
+  </div>
+  <div class="answer-section">
+    <div class="answer-hdr">📋 学生提交检查要点</div>
+    <div class="answer-body"><div id="check_points"></div></div>
+  </div>
+</div>
+
+</div><!-- /right -->
+</div><!-- /layout -->
+
+<!-- MATLAB导出弹窗 -->
+<div class="export-overlay" id="export_overlay" onclick="closeExport(event)">
+  <div class="export-box">
+    <h3>📋 MATLAB 格式导出 — 负荷特性多项式系数</h3>
+    <textarea id="export_text" readonly spellcheck="false"></textarea>
+    <div class="export-btns">
+      <button class="export-copy-btn" onclick="copyExport()">复制到剪贴板</button>
+      <button class="export-close-btn" onclick="$('export_overlay').classList.remove('show')">关闭</button>
+    </div>
+  </div>
+</div>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.0/chart.umd.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/plotly.js/2.27.0/plotly.min.js"></script>
+<script>
+// ═══════════════════════════════════════════════════════════════
+// 内置实验数据（492QC-2，用于"重新拟合"按钮）
+// ═══════════════════════════════════════════════════════════════
+const BUILTIN_NN = [815,1207,1614,2012,2603,3006,3403,3804];
+const BUILTIN_PE = {
+  815:  [3.33,4.257,5.183,6.11,7.037,7.963,8.89,9.817,10.743,11.67],
+  1207: [5.0,6.667,8.333,10.0,11.667,13.333,15.0,16.667,18.333,20.0],
+  1614: [5.83,8.516,11.201,13.887,16.572,19.258,21.943,24.629,27.314,30.0],
+  2012: [7.5,10.833,14.167,17.5,20.833,24.167,27.5,30.833,34.167,37.5],
+  2603: [8.33,11.849,15.368,18.887,22.406,25.925,29.444,32.963,36.482,40.0],
+  3006: [10.0,14.814,19.629,24.443,29.258,34.072,38.887,43.701,48.516,53.33],
+  3403: [10.0,14.814,19.629,24.443,29.258,34.072,38.887,43.701,48.516,53.33],
+  3804: [10.0,14.814,19.629,24.443,29.258,34.072,38.887,43.701,48.516,53.33],
+};
+const BUILTIN_BE = {
+  815:  [547.9,471.7,424.5,394.6,373.0,354.1,335.3,317.2,303.6,301.4],
+  1207: [521.2,451.9,407.6,378.6,357.7,339.8,322.3,304.8,289.1,279.5],
+  1614: [578.3,478.0,411.5,368.9,325.1,313.0,303.0,293.9,284.5,282.5],
+  2012: [532.7,469.2,396.7,352.0,325.5,310.0,300.0,292.5,286.0,281.2],
+  2603: [578.5,431.5,363.6,328.8,312.5,303.8,296.4,288.1,281.1,281.5],
+  3006: [552.1,449.9,379.2,339.1,316.5,302.5,291.8,282.8,277.9,278.6],
+  3403: [631.1,485.0,398.4,351.2,327.5,315.2,306.6,298.2,290.2,287.3],
+  3804: [716.0,571.1,462.3,386.2,338.2,313.2,305.1,307.1,311.6,305.1],
+};
+
+// ═══════════════════════════════════════════════════════════════
+// 多项式状态（核心数据结构）
+// ═══════════════════════════════════════════════════════════════
+// polyState: { speeds: number[], coeffs: number[][], deg: number, peMax: number[], r2: number[] }
+let polyState = { speeds:[], coeffs:[], deg:4, peMax:[], r2:[] };
+
+// ═══════════════════════════════════════════════════════════════
+// 数学工具
+// ═══════════════════════════════════════════════════════════════
+function Ttq(n){
+  const x=n/1000;
+  const A=parseFloat($('tq_A').value)||0, B=parseFloat($('tq_B').value)||0;
+  const C=parseFloat($('tq_C').value)||0, D=parseFloat($('tq_D').value)||0;
+  const E=parseFloat($('tq_E').value)||0;
+  return A + B*x + C*x*x + D*x*x*x + E*x*x*x*x;
+}
+function n2ua(n,ig,p){ return 0.377*p.r*n/(ig*p.i0); }
+function Pe_resist(ua,p){ return (p.m*p.g*p.f*ua/3600 + p.CdA*ua*ua*ua/76140)/p.eta; }
+function Pe_accel(ua,ig,p,a_acc){
+  const s=1+(p.Iw1+p.Iw2)/(p.m*p.r*p.r)+(p.If*ig*ig*p.i0*p.i0*p.eta)/(p.m*p.r*p.r);
+  return (p.m*p.g*p.f*ua/3600 + p.CdA*ua*ua*ua/76140 + s*p.m*ua*a_acc/3600)/p.eta;
+}
+
+// 多项式求值（降幂系数 coefs[0]*x^n + ... 或升幂 a[0]+a[1]*x+a[2]*x^2 取决于调用方）
+// 这里用升幂（自然顺序 a0,a1,a2,...）
+function polyvalAsc(coefs, x){
+  let val=0, xp=1;
+  for(let i=0;i<coefs.length;i++){ val+=coefs[i]*xp; xp*=x; }
+  return val;
+}
+
+// 降幂 polyfit（标准 MATLAB 顺序），返回升幂系数
+function polyfit(xArr, yArr, deg){
+  const n=xArr.length, m=deg+1;
+  const A=[], b=[];
+  for(let i=0;i<n;i++){
+    const row=[];
+    for(let j=0;j<m;j++) row.push(Math.pow(xArr[i],deg-j));
+    A.push(row); b.push(yArr[i]);
+  }
+  const ATA=[], ATb=[];
+  for(let i=0;i<m;i++){ ATA.push(new Array(m).fill(0)); ATb.push(0); }
+  for(let k=0;k<n;k++){
+    for(let i=0;i<m;i++){
+      for(let j=0;j<m;j++) ATA[i][j]+=A[k][i]*A[k][j];
+      ATb[i]+=A[k][i]*b[k];
+    }
+  }
+  for(let p2=0;p2<m;p2++){
+    let maxRow=p2;
+    for(let i=p2+1;i<m;i++) if(Math.abs(ATA[i][p2])>Math.abs(ATA[maxRow][p2])) maxRow=i;
+    [ATA[p2],ATA[maxRow]]=[ATA[maxRow],ATA[p2]];
+    [ATb[p2],ATb[maxRow]]=[ATb[maxRow],ATb[p2]];
+    for(let i=p2+1;i<m;i++){
+      const f=ATA[i][p2]/ATA[p2][p2];
+      for(let j=p2;j<m;j++) ATA[i][j]-=f*ATA[p2][j];
+      ATb[i]-=f*ATb[p2];
+    }
+  }
+  const c=new Array(m).fill(0);
+  for(let i=m-1;i>=0;i--){
+    c[i]=ATb[i];
+    for(let j=i+1;j<m;j++) c[i]-=ATA[i][j]*c[j];
+    c[i]/=ATA[i][i];
+  }
+  // 返回降幂顺序 → 转为升幂
+  return c.reverse();
+}
+
+function calcR2(xArr, yArr, coefs){
+  const mean=yArr.reduce((a,b)=>a+b,0)/yArr.length;
+  let ss_tot=0, ss_res=0;
+  for(let i=0;i<xArr.length;i++){
+    ss_tot+=(yArr[i]-mean)**2;
+    ss_res+=(yArr[i]-polyvalAsc(coefs,xArr[i]))**2;
+  }
+  return 1-ss_res/ss_tot;
+}
+
+// ══ be(Pe) via polynomial, with interpolation between test speeds ══
+function beFromPoly(n_query, Pe){
+  const {speeds, coeffs} = polyState;
+  if(speeds.length===0) return 300;
+  if(speeds.length===1) return Math.max(200, Math.min(800, polyvalAsc(coeffs[0], Pe)));
+
+  // Clamp n to range
+  if(n_query <= speeds[0]) return clampBe(polyvalAsc(coeffs[0], Pe));
+  if(n_query >= speeds[speeds.length-1]) return clampBe(polyvalAsc(coeffs[coeffs.length-1], Pe));
+
+  for(let i=0;i<speeds.length-1;i++){
+    if(n_query >= speeds[i] && n_query <= speeds[i+1]){
+      const t=(n_query-speeds[i])/(speeds[i+1]-speeds[i]);
+      const be1=polyvalAsc(coeffs[i], Pe);
+      const be2=polyvalAsc(coeffs[i+1], Pe);
+      return clampBe(be1+t*(be2-be1));
+    }
+  }
+  return 300;
+}
+
+function clampBe(v){ return Math.max(200, Math.min(900, v)); }
+
+// beAtN for computation: uses polyState by speed index
+function beAtNPoly(speedIdx, Pe){
+  if(!polyState.coeffs[speedIdx]) return 300;
+  return clampBe(polyvalAsc(polyState.coeffs[speedIdx], Pe));
+}
+
+// ═══════════════════════════════════════════════════════════════
+// 多项式面板 UI
+// ═══════════════════════════════════════════════════════════════
+function buildPolyTable(){
+  const deg = polyState.deg;
+  const thead = $('poly_thead');
+  const hint  = $('poly_formula_hint');
+
+  // Header
+  const colDegLabels = ['a₀','a₁','a₂','a₃'].slice(0,deg+1);
+  const degHeads = colDegLabels.map((l,i)=>`<th class="colC" title="Pe^${i} 的系数">${l}</th>`).join('');
+  thead.innerHTML=`<tr>
+    <th class="colN" style="min-width:54px">n<br><span style="font-weight:400;color:#7090b8">(r/min)</span></th>
+    ${degHeads}
+    <th class="colR" title="拟合优度">R²</th>
+    <th style="width:22px"></th>
+  </tr>`;
+
+  // Formula hint
+  const terms = colDegLabels.map((l,i)=>`<span class="hl">${l}</span>·Pe${i>0?(i>1?'<sup>'+i+'</sup>':''):'⁰'.replace('⁰','')}`).join(' + ');
+  hint.innerHTML=`be(Pe) = ${colDegLabels.map((l,i)=>`<span class="hl">${l}</span>${i>0?'·Pe'+(i>1?`<sup>${i}</sup>`:''):''}` ).join(' + ')}<br>单位：be [g/kW·h]，Pe [kW]`;
+
+  // Body
+  const tbody = $('poly_tbody');
+  tbody.innerHTML = '';
+  polyState.speeds.forEach((n, idx) => {
+    tbody.appendChild(makePolyRow(idx));
+  });
+}
+
+function makePolyRow(idx){
+  const deg = polyState.deg;
+  const tr = document.createElement('tr');
+  const n = polyState.speeds[idx];
+  const cs = polyState.coeffs[idx] || new Array(deg+1).fill(0);
+  const r2 = polyState.r2[idx];
+  const pemax = polyState.peMax[idx];
+
+  let r2html = '—';
+  if(r2 !== undefined && r2 !== null){
+    const r2c = r2>=0.999?'r2-hi':r2>=0.99?'r2-mid':'r2-lo';
+    r2html = `<span class="${r2c}">${r2.toFixed(4)}</span>`;
+  }
+
+  const coefCells = Array.from({length:deg+1},(_,j)=>`
+    <td><input type="number" id="pc_${idx}_${j}" value="${fmtCoef(cs[j]||0)}"
+      step="any" onchange="onCoeffChange(${idx},${j})" style="width:${deg>=3?'68px':'76px'}"></td>`
+  ).join('');
+
+  tr.innerHTML=`
+    <td><input type="number" class="n-input" id="pn_${idx}" value="${n}"
+      step="1" onchange="onSpeedChange(${idx})" style="width:54px"
+      title="测试转速，对应 Pe_max≈${pemax?pemax.toFixed(1):'—'} kW"></td>
+    ${coefCells}
+    <td class="r2-cell" id="pr2_${idx}">${r2html}</td>
+    <td class="del-cell"><button class="del-row-btn" onclick="deleteRow(${idx})" title="删除此行">✕</button></td>`;
+  return tr;
+}
+
+function fmtCoef(v){
+  if(Math.abs(v)>=1) return parseFloat(v.toFixed(4));
+  return parseFloat(v.toPrecision(5));
+}
+
+function rebuildTableBody(){
+  const tbody=$('poly_tbody');
+  tbody.innerHTML='';
+  polyState.speeds.forEach((_,idx)=>tbody.appendChild(makePolyRow(idx)));
+}
+
+function onDegreeChange(){
+  const newDeg = parseInt($('poly_deg').value);
+  if(newDeg === polyState.deg) return;
+  polyState.deg = newDeg;
+  // Re-fit or zero-pad/truncate
+  if(polyState.speeds.length>0 && hasBuiltinData()){
+    fitFromBuiltin(false); // silent re-fit
+  } else {
+    // Truncate or zero-pad coefficients
+    polyState.coeffs = polyState.coeffs.map(cs=>{
+      const out = [...cs];
+      while(out.length < newDeg+1) out.push(0);
+      return out.slice(0, newDeg+1);
+    });
+  }
+  buildPolyTable();
+  recalcAll();
+}
+
+function hasBuiltinData(){ return polyState.speeds.some(n=>BUILTIN_NN.includes(n)); }
+
+function onCoeffChange(idx, j){
+  const val = parseFloat($(`pc_${idx}_${j}`).value)||0;
+  if(!polyState.coeffs[idx]) polyState.coeffs[idx]=new Array(polyState.deg+1).fill(0);
+  polyState.coeffs[idx][j] = val;
+  polyState.r2[idx] = null; // invalidate r2
+  $(`pr2_${idx}`).innerHTML='<span style="color:var(--ink3)">—</span>';
+  recalcAll();
+}
+
+function onSpeedChange(idx){
+  const val = parseFloat($(`pn_${idx}`).value)||polyState.speeds[idx];
+  polyState.speeds[idx] = val;
+  // Update Pe_max estimate
+  const peMax = Ttq(val)*val*2*Math.PI/60/1000;
+  polyState.peMax[idx] = peMax;
+  recalcAll();
+}
+
+function addSpeedRow(){
+  const lastN = polyState.speeds.length>0 ? polyState.speeds[polyState.speeds.length-1]+400 : 1000;
+  polyState.speeds.push(Math.min(lastN,5000));
+  polyState.coeffs.push(new Array(polyState.deg+1).fill(0));
+  polyState.r2.push(null);
+  polyState.peMax.push(0);
+  rebuildTableBody();
+}
+
+function deleteRow(idx){
+  if(polyState.speeds.length<=1){ alert('至少保留1行'); return; }
+  polyState.speeds.splice(idx,1);
+  polyState.coeffs.splice(idx,1);
+  polyState.r2.splice(idx,1);
+  polyState.peMax.splice(idx,1);
+  rebuildTableBody();
+  recalcAll();
+}
+
+function toggleGroup(id){
+  $(id).classList.toggle('collapsed');
+}
+
+// ══ 从内置数据拟合 ══
+function fitFromBuiltin(rebuild=true){
+  const deg = polyState.deg;
+  polyState.speeds=[];
+  polyState.coeffs=[];
+  polyState.r2=[];
+  polyState.peMax=[];
+
+  BUILTIN_NN.forEach(n=>{
+    const pe = BUILTIN_PE[n];
+    const be = BUILTIN_BE[n];
+    const cs = polyfit(pe, be, deg);
+    const r2 = calcR2(pe, be, cs);
+    const peMax = pe[pe.length-1];
+    polyState.speeds.push(n);
+    polyState.coeffs.push(cs);
+    polyState.r2.push(r2);
+    polyState.peMax.push(peMax);
+  });
+
+  if(rebuild){ buildPolyTable(); recalcAll(); }
+}
+
+// ══ MATLAB导出 ══
+function exportMatlab(){
+  const {speeds, coeffs, deg} = polyState;
+  const degNames=['','','二次','三次'];
+  const lines=[
+    `% ═══════════════════════════════════════════════════════`,
+    `% 汽车经济性工具 — 负荷特性 be-Pe ${deg}阶多项式系数`,
+    `% 生成时间：${new Date().toLocaleString('zh-CN')}`,
+    `% be(Pe) = a0 + a1*Pe + a2*Pe^2 ${deg>=3?'+ a3*Pe^3':''}`,
+    `% 单位：be [g/kW·h]，Pe [kW]`,
+    `% ═══════════════════════════════════════════════════════`,
+    ``,
+    `% 测试转速列表 (r/min)`,
+    `n_test = [${speeds.join(', ')}];`,
+    ``,
+    `% 多项式系数矩阵：每行对应一个转速`,
+    `% 列顺序：[a0, a1, a2${deg>=3?', a3':''}]  (升幂顺序，a0为常数项)`,
+    `be_poly = [`,
+    ...speeds.map((n,i)=>{
+      const cs=(coeffs[i]||[]).slice(0,deg+1).map(v=>v.toFixed(6));
+      while(cs.length<deg+1) cs.push('0');
+      return `    ${cs.join(', ')};  % n=${n} r/min`;
+    }),
+    `];`,
+    ``,
+    `% ── MATLAB 用法示例 ──`,
+    `% 查询 n=2012 r/min, Pe=20 kW 时的 be：`,
+    `% idx = find(n_test == 2012);`,
+    `% be_val = polyval(fliplr(be_poly(idx,:)), 20);`,
+    ``,
+    `% 在任意转速 n_q 插值：`,
+    `% 先找两个相邻转速，对各自多项式求值后线性插值`,
+    `function be = beQuery(n_q, Pe_q, n_test, be_poly)`,
+    `  idx = find(n_test <= n_q, 1, 'last');`,
+    `  if isempty(idx), idx=1; end`,
+    `  if idx == length(n_test), idx=idx-1; end`,
+    `  t = (n_q - n_test(idx)) / (n_test(idx+1) - n_test(idx));`,
+    `  be1 = polyval(fliplr(be_poly(idx,:)),   Pe_q);`,
+    `  be2 = polyval(fliplr(be_poly(idx+1,:)), Pe_q);`,
+    `  be = be1 + t*(be2-be1);`,
+    `end`,
+    ``,
+    `% R² 参考（拟合优度）`,
+    `% ${speeds.map((n,i)=>`n=${n}: R²=${polyState.r2[i]!==null&&polyState.r2[i]!==undefined?polyState.r2[i].toFixed(4):'—'}`).join(',  ')}`,
+  ];
+  $('export_text').value = lines.join('\n');
+  $('export_overlay').classList.add('show');
+}
+
+function copyExport(){
+  $('export_text').select();
+  document.execCommand('copy');
+  const btn=document.querySelector('.export-copy-btn');
+  btn.textContent='✓ 已复制！';
+  setTimeout(()=>btn.textContent='复制到剪贴板',2000);
+}
+function closeExport(e){ if(e.target===$('export_overlay')) $('export_overlay').classList.remove('show'); }
+
+// ═══════════════════════════════════════════════════════════════
+// 主计算
+// ═══════════════════════════════════════════════════════════════
+const $=id=>document.getElementById(id);
+const gv=id=>parseFloat($(id).value)||0;
+
+Chart.defaults.color='#7090b8';
+Chart.defaults.borderColor='#2a3d5a';
+Chart.defaults.font.family="'JetBrains Mono',monospace";
+Chart.defaults.font.size=13;
+const charts={};
+function mkChart(id,cfg){ if(charts[id])charts[id].destroy(); charts[id]=new Chart($(id),cfg); return charts[id]; }
+
+const GEAR_RATIOS={4:[6.09,3.09,1.71,1.00], 5:[5.56,2.769,1.644,1.00,0.793]};
+const GEAR_NAMES=['Ⅰ','Ⅱ','Ⅲ','Ⅳ','Ⅴ'];
+const COLORS=['#ff6b5a','#ffd166','#40d4c0','#4d9fff','#a78bfa'];
+let RESULTS={};
+
+function readPolyFromDOM(){
+  // Sync DOM → polyState before calculation
+  polyState.speeds.forEach((_,idx)=>{
+    const nEl=$(`pn_${idx}`);
+    if(nEl) polyState.speeds[idx]=parseFloat(nEl.value)||polyState.speeds[idx];
+    polyState.coeffs[idx]=Array.from({length:polyState.deg+1},(_,j)=>{
+      const el=$(`pc_${idx}_${j}`);
+      return el?parseFloat(el.value)||0:0;
+    });
+  });
+}
+
+function recalcAll(){
+  readPolyFromDOM();
+  readCycleFromDOM();
+  if(polyState.speeds.length===0) return;
+
+  const gear_type=parseInt($('gear_type').value);
+  const gears=GEAR_RATIOS[gear_type];
+  const p={
+    m:gv('p_m'), r:gv('p_r'), f:gv('p_f'),
+    CdA:gv('p_CdA'), eta:gv('p_eta')/100, i0:gv('p_i0'),
+    nmin:gv('p_nmin'), nmax:gv('p_nmax'),
+    g:9.8, If:0.218, Iw1:1.798, Iw2:3.598,
+    gears, gear_type,
+  };
+
+  const testSpeeds = polyState.speeds;
+  const N_test = testSpeeds;
+
+  // 69个转速点
+  const N69=[];
+  for(let i=0;i<69;i++) N69.push((i+12)*50);
+
+  // 外特性
+  const n_outer=[], Ttq_outer=[], Pe_outer=[];
+  for(let n=p.nmin;n<=p.nmax;n+=10){
+    const tq=Ttq(n), pe=tq*n*2*Math.PI/60/1000;
+    n_outer.push(n); Ttq_outer.push(tq); Pe_outer.push(pe);
+  }
+
+  // 各档曲线
+  const gear_curves=[];
+  gears.forEach((ig,gi)=>{
+    // 测试转速处的8个点（或任意数量）
+    const ua_ntest = N_test.map(nn=>n2ua(nn,ig,p));
+    const Pe_ntest = ua_ntest.map(ua=>Pe_resist(ua,p));
+    // be via polynomial
+    const be_ntest = N_test.map((nn,ni)=>beFromPoly(nn, Pe_ntest[ni]));
+    const Qs_ntest = ua_ntest.map((ua,ni)=>Pe_ntest[ni]*be_ntest[ni]/(1.02*ua*7.15));
+
+    // 加速工况 be
+    const Pe_ntest_a025 = ua_ntest.map((ua)=>Pe_accel(ua,ig,p,0.25));
+    const be_ntest_a025 = N_test.map((nn,ni)=>beFromPoly(nn, Pe_ntest_a025[ni]));
+    const Pe_ntest_a020 = ua_ntest.map((ua)=>Pe_accel(ua,ig,p,0.20));
+    const be_ntest_a020 = N_test.map((nn,ni)=>beFromPoly(nn, Pe_ntest_a020[ni]));
+
+    // 用测试点拟合4阶多项式 (ua,be) → 69点等速油耗
+    function fitAndEval69(be_pts, Pe_pts_accel, be_pts_accel){
+      let B0, ua_69_valid=[], be_69_valid=[];
+      if(ua_ntest.length >= 5){
+        try{ B0=polyfit(ua_ntest.filter((u,i)=>u>0), be_ntest.filter((_,i)=>ua_ntest[i]>0), Math.min(4,ua_ntest.filter(u=>u>0).length-1)); }
+        catch(e){ B0=[300,-2,0.05,0,0]; }
+      } else {
+        B0=[300,-2,0.05,0,0]; // fallback
+      }
+      return B0;
+    }
+
+    // polyfit (ua, be) 直接4阶
+    const validPts = ua_ntest.map((ua,i)=>({ua,be:be_ntest[i]})).filter(p=>p.ua>0);
+    let B0, B1, B2;
+    const fitDeg = Math.min(4, Math.max(1, validPts.length-1));
+    if(validPts.length>=2){
+      try{
+        B0=polyfit(validPts.map(p=>p.ua), validPts.map(p=>p.be), fitDeg);
+        const vPts1=ua_ntest.map((ua,i)=>({ua,be:be_ntest_a025[i]})).filter(p=>p.ua>0);
+        B1=polyfit(vPts1.map(p=>p.ua),vPts1.map(p=>p.be),Math.min(fitDeg,vPts1.length-1));
+        const vPts2=ua_ntest.map((ua,i)=>({ua,be:be_ntest_a020[i]})).filter(p=>p.ua>0);
+        B2=polyfit(vPts2.map(p=>p.ua),vPts2.map(p=>p.be),Math.min(fitDeg,vPts2.length-1));
+      }catch(e){ B0=B1=B2=[300]; }
+    } else { B0=B1=B2=[300]; }
+
+    const ua_69=N69.map(nn=>n2ua(nn,ig,p));
+    const Pe_69_0=ua_69.map(ua=>Pe_resist(ua,p));
+    const be_69_0=ua_69.map(ua=>polyvalAsc(B0,ua));
+    const Qs_69=ua_69.map((ua,i)=>Pe_69_0[i]*be_69_0[i]/(1.02*ua*7.15));
+
+    const Pe_69_1=ua_69.map((ua)=>Pe_accel(ua,ig,p,0.25));
+    const be_69_1=ua_69.map(ua=>polyvalAsc(B1,ua));
+    const Pe_69_2=ua_69.map((ua)=>Pe_accel(ua,ig,p,0.20));
+    const be_69_2=ua_69.map(ua=>polyvalAsc(B2,ua));
+
+    const Ft_69=N69.map(nn=>Ttq(nn)*ig*p.i0*p.eta/p.r);
+    const Pd_69=ua_69.map((ua,i)=>Ft_69[i]*ua/3600);
+    gear_curves.push({ig,gi,ua_ntest,Qs_ntest,ua_69,Qs_69,Ft_69,Pd_69,
+      Pe_69_0,Pe_69_1,Pe_69_2,be_69_0,be_69_1,be_69_2,B0,B1,B2});
+  });
+
+  const ig_top=gears[gear_type-1];
+  const ua_top69=N69.map(nn=>n2ua(nn,ig_top,p));
+  const Fr_top69=ua_top69.map(ua=>p.m*p.g*p.f+p.CdA*ua*ua/21.15);
+  const Pr_top69=ua_top69.map((ua,i)=>Fr_top69[i]*ua/3600);
+
+  const g_top=gear_curves[gear_type-1];
+  let u_max=0;
+  for(let i=N69.length-1;i>=0;i--){
+    if(g_top.Ft_69[i]>=Fr_top69[i]&&Fr_top69[i]>0){ u_max=g_top.ua_69[i]; break; }
+  }
+
+  const Qid=0.299;
+  function sixCycle(gi){
+    const gc=gear_curves[gi];
+    const ua1=gc.ua_69,Pe0=gc.Pe_69_0,be0=gc.be_69_0,
+          Pe1=gc.Pe_69_1,be1=gc.be_69_1,Pe2=gc.Pe_69_2,be2=gc.be_69_2;
+    function interp1(xA,yA,x){
+      if(x<=xA[0]) return yA[0];
+      if(x>=xA[xA.length-1]) return yA[yA.length-1];
+      for(let i=0;i<xA.length-1;i++){
+        if(xA[i]<=x&&x<=xA[i+1]){ const t=(x-xA[i])/(xA[i+1]-xA[i]); return yA[i]+t*(yA[i+1]-yA[i]); }
+      }
+      return yA[yA.length-1];
+    }
+    const Q1=interp1(ua1,Pe0,25)*interp1(ua1,be0,25)*50/(102*25*7.10);
+    let Q2=0; const Qt2=[];
+    for(let i=0;i<16;i++){ const u=24+i+1; Qt2.push(interp1(ua1,Pe1,u)*interp1(ua1,be1,u)/(367.1*7.10)); }
+    const dt2=1/(3.6*0.25); for(let i=0;i<15;i++) Q2+=(Qt2[i]+Qt2[i+1])/2*dt2;
+    const Q3=interp1(ua1,Pe0,40)*interp1(ua1,be0,40)*250/(102*40*7.10);
+    let Q4=0; const Qt4=[];
+    for(let i=0;i<11;i++){ const u=39+i+1; Qt4.push(interp1(ua1,Pe2,u)*interp1(ua1,be2,u)/(367.1*7.10)); }
+    const dt4=1/(3.6*0.20); for(let i=0;i<10;i++) Q4+=(Qt4[i]+Qt4[i+1])/2*dt4;
+    const Q5=interp1(ua1,Pe0,50)*interp1(ua1,be0,50)*250/(102*50*7.10);
+    const Q6=Qid*(50-25)/(3.6*0.36);
+    return {Q1,Q2,Q3,Q4,Q5,Q6,Qs:(Q1+Q2+Q3+Q4+Q5+Q6)*100/1075};
+  }
+
+  const cycle_result = calcCycle(gear_curves, p);
+
+  RESULTS={p,gears,gear_type,gear_curves,n_outer,Ttq_outer,Pe_outer,
+    ua_top69,Fr_top69,Pr_top69,u_max,cycle_result,
+    ig_top,ig_2nd:gears[gear_type-2]};
+
+  renderAll();
+}
+
+// ═══════════════════════════════════════════════════════════════
+// 行驶循环状态 & 计算
+// ═══════════════════════════════════════════════════════════════
+
+// 段类型定义
+const CY_TYPES = {
+  const: {label:'等速',  color:'badge-const',  fields:['v1','param'], paramLabel:'行程 S (m)'},
+  accel: {label:'加速',  color:'badge-accel',  fields:['v1','v2','param','gear'], paramLabel:'加速度 a (m/s²)'},
+  decel: {label:'减速*', color:'badge-decel',  fields:['v1','v2','param'], paramLabel:'减速度 a (m/s²)'},
+  idle:  {label:'怠速',  color:'badge-idle',   fields:['param'], paramLabel:'时间 t (s)'},
+};
+
+// 预设工况库
+const PRESETS = {
+  jb_top: [
+    {type:'const', v1:25, v2:0,  param:50,   gear:'top', note:'等速25km/h, 50m'},
+    {type:'accel', v1:25, v2:40, param:0.25, gear:'top', note:'25→40 km/h, a=0.25'},
+    {type:'const', v1:40, v2:0,  param:250,  gear:'top', note:'等速40km/h, 250m'},
+    {type:'accel', v1:40, v2:50, param:0.20, gear:'top', note:'40→50 km/h, a=0.20'},
+    {type:'const', v1:50, v2:0,  param:250,  gear:'top', note:'等速50km/h, 250m'},
+    {type:'decel', v1:50, v2:25, param:0.36, gear:'top', note:'50→25 km/h 减速(怠速)'},
+  ],
+  jb_sec: [
+    {type:'const', v1:25, v2:0,  param:50,   gear:'sec'},
+    {type:'accel', v1:25, v2:40, param:0.25, gear:'sec'},
+    {type:'const', v1:40, v2:0,  param:250,  gear:'sec'},
+    {type:'accel', v1:40, v2:50, param:0.20, gear:'sec'},
+    {type:'const', v1:50, v2:0,  param:250,  gear:'sec'},
+    {type:'decel', v1:50, v2:25, param:0.36, gear:'sec'},
+  ],
+  // NEDC 城市工况（简化4个ECE循环，参考教材）
+  nedc: [
+    {type:'idle',  v1:0,  v2:0,  param:11,   gear:'sec', note:'怠速停车 11s'},
+    {type:'accel', v1:0,  v2:15, param:1.04,  gear:'1',   note:'0→15 km/h'},
+    {type:'const', v1:15, v2:0,  param:41.8, gear:'1',   note:'等速15 km/h 8s'},
+    {type:'decel', v1:15, v2:10, param:0.75,  gear:'1',   note:'15→10 制动'},
+    {type:'accel', v1:10, v2:32, param:0.69,  gear:'2',   note:'10→32 km/h'},
+    {type:'const', v1:32, v2:0,  param:213,  gear:'2',   note:'等速32 km/h'},
+    {type:'decel', v1:32, v2:10, param:0.75,  gear:'2',   note:'32→10 制动'},
+    {type:'accel', v1:10, v2:50, param:0.43,  gear:'3',   note:'10→50 km/h'},
+    {type:'const', v1:50, v2:0,  param:208,  gear:'3',   note:'等速50 km/h'},
+    {type:'decel', v1:50, v2:0,  param:0.90,  gear:'3',   note:'50→0 制动'},
+    {type:'idle',  v1:0,  v2:0,  param:21,   gear:'sec', note:'怠速 21s'},
+  ],
+  empty: [],
+};
+
+let cycleState = {
+  segments: [],
+};
+
+function loadPreset(name){
+  const segs = (PRESETS[name]||[]).map(s=>({...s}));
+  cycleState.segments = segs;
+  buildCycleTable();
+  recalcAll();
+}
+
+// ── 读取DOM → cycleState ──
+function readCycleFromDOM(){
+  cycleState.segments.forEach((_,idx)=>{
+    const tEl = $(`cy_type_${idx}`);
+    const v1El = $(`cy_v1_${idx}`);
+    const v2El = $(`cy_v2_${idx}`);
+    const paramEl = $(`cy_param_${idx}`);
+    const gearEl = $(`cy_gear_${idx}`);
+    if(tEl)    cycleState.segments[idx].type  = tEl.value;
+    if(v1El)   cycleState.segments[idx].v1    = parseFloat(v1El.value)||0;
+    if(v2El)   cycleState.segments[idx].v2    = parseFloat(v2El.value)||0;
+    if(paramEl)cycleState.segments[idx].param = parseFloat(paramEl.value)||0;
+    if(gearEl) cycleState.segments[idx].gear  = gearEl.value;
+  });
+}
+
+// ── 计算循环工况 ──
+function calcCycle(gear_curves, p){
+  const Qid   = parseFloat($('cy_Qid').value)  || 0.299;
+  const gamma = parseFloat($('cy_gamma').value) || 7.10;
+  const segs  = cycleState.segments;
+  const gear_type = parseInt($('gear_type').value);
+  const gears = GEAR_RATIOS[gear_type];
+
+  // 解析档位标识 → 实际传动比
+  function resolveGear(gearStr){
+    if(gearStr==='top') return {ig:gears[gear_type-1], gi:gear_type-1};
+    if(gearStr==='sec') return {ig:gears[gear_type-2], gi:gear_type-2};
+    const gi = parseInt(gearStr);
+    if(!isNaN(gi) && gi>=0 && gi<gears.length) return {ig:gears[gi], gi};
+    return {ig:gears[gear_type-1], gi:gear_type-1};
+  }
+
+  // 在 gear_curves 的69点插值
+  function interp69(gc, ua, arr){
+    const xA=gc.ua_69, yA=arr;
+    if(ua<=xA[0]) return yA[0];
+    if(ua>=xA[xA.length-1]) return yA[yA.length-1];
+    for(let i=0;i<xA.length-1;i++){
+      if(xA[i]<=ua&&ua<=xA[i+1]){
+        const t=(ua-xA[i])/(xA[i+1]-xA[i]);
+        return yA[i]+t*(yA[i+1]-yA[i]);
+      }
+    }
+    return yA[yA.length-1];
+  }
+
+  const results = segs.map((seg,si)=>{
+    const {type, v1, v2, param} = seg;
+    const {ig, gi} = resolveGear(seg.gear||'top');
+    const gc = gear_curves[gi] || gear_curves[gear_curves.length-1];
+    let Q=0, dist=0, time=0, label='', desc='';
+
+    if(type==='const'){
+      // 等速：v1=速度, param=行程(m)
+      const ua=v1, S=param;
+      const Pe = interp69(gc, ua, gc.Pe_69_0);
+      const be = interp69(gc, ua, gc.be_69_0);
+      Q = Pe * be * S / (102 * ua * gamma);
+      dist = S;
+      time = S / (ua/3.6);
+      label = `等速 ${ua}km/h`;
+      desc  = `行程${S}m, ${time.toFixed(1)}s`;
+    } else if(type==='accel'){
+      // 加速：v1→v2, param=加速度(m/s²)
+      const a=param, steps=Math.abs(Math.round(v2-v1))+1;
+      const vArr=Array.from({length:steps},(_,i)=>Math.min(v1,v2)+i);
+      const Qt=vArr.map(u=>{
+        const Pe=interp69(gc,u,gc.Pe_69_1);
+        const be=interp69(gc,u,gc.be_69_1);
+        return Pe*be/(367.1*gamma);
+      });
+      const dt=1/(3.6*a);
+      for(let i=0;i<Qt.length-1;i++) Q+=(Qt[i]+Qt[i+1])/2*dt;
+      const v1ms=v1/3.6, v2ms=v2/3.6;
+      dist=Math.abs(v2ms*v2ms-v1ms*v1ms)/(2*a);
+      time=Math.abs(v2-v1)/(3.6*a);
+      label=`加速 ${v1}→${v2}km/h`;
+      desc =`a=${a}m/s², ${dist.toFixed(0)}m, ${time.toFixed(1)}s`;
+    } else if(type==='decel'){
+      // 减速（怠速油耗）：v1→v2, param=减速度(m/s²)
+      const a=param;
+      Q=Qid*Math.abs(v1-v2)/(3.6*a);
+      const v1ms=v1/3.6,v2ms=v2/3.6;
+      dist=Math.abs(v1ms*v1ms-v2ms*v2ms)/(2*a);
+      time=Math.abs(v1-v2)/(3.6*a);
+      label=`减速* ${v1}→${v2}km/h`;
+      desc =`a=${a}m/s², ${dist.toFixed(0)}m, 怠速油耗`;
+    } else if(type==='idle'){
+      // 怠速停车：param=时间(s)
+      Q=Qid*param;
+      dist=0; time=param;
+      label='怠速停车';
+      desc =`${param}s`;
+    }
+
+    const gearLabel = seg.gear==='top'?`顶档(${GEAR_NAMES[gi]})`:
+                      seg.gear==='sec'?`次高档(${GEAR_NAMES[gi]})`:
+                      `${GEAR_NAMES[gi]}档`;
+    return {Q, dist, time, label, desc, type, gearLabel};
+  });
+
+  const totalQ    = results.reduce((a,r)=>a+r.Q,   0);
+  const totalDist = results.reduce((a,r)=>a+r.dist, 0);
+  const totalTime = results.reduce((a,r)=>a+r.time, 0);
+  const Qs = totalDist>0 ? totalQ*100/totalDist : 0;
+
+  // 更新左侧摘要
+  $('cycle_seg_count').textContent = `${segs.length}段`;
+  $('cy_summary').innerHTML =
+    `总行程：<span style="color:var(--blue)">${totalDist.toFixed(0)} m</span> &nbsp;·&nbsp; `+
+    `总时间：<span style="color:var(--teal)">${totalTime.toFixed(1)} s</span> &nbsp;·&nbsp; `+
+    `<span style="color:var(--green);font-weight:700">Qs = ${Qs.toFixed(2)} L/100km</span>`;
+
+  return {segments:results, totalQ, totalDist, totalTime, Qs};
+}
+
+// ── 行驶循环表格 UI ──
+function buildCycleTable(){
+  const tbody=$('cy_tbody');
+  tbody.innerHTML='';
+  cycleState.segments.forEach((_,idx)=>tbody.appendChild(makeCycleRow(idx)));
+}
+
+function makeCycleRow(idx){
+  const seg = cycleState.segments[idx];
+  const type = seg.type||'const';
+  const gear_type = parseInt($('gear_type').value);
+  const gears = GEAR_RATIOS[gear_type];
+
+  const typeOpts=['const','accel','decel','idle'].map(t=>
+    `<option value="${t}"${t===type?' selected':''}>${CY_TYPES[t].label}</option>`).join('');
+
+  // v2 and gear visibility by type
+  const showV2   = (type==='accel'||type==='decel');
+  const showGear = (type==='const'||type==='accel');
+  const paramPH  = type==='const'?'m' : type==='accel'||type==='decel'?'m/s²' : 's';
+
+  const gearOpts = [
+    `<option value="top"${seg.gear==='top'?' selected':''}>顶档</option>`,
+    `<option value="sec"${seg.gear==='sec'?' selected':''}>次高</option>`,
+    ...gears.map((ig,i)=>`<option value="${i}"${seg.gear===String(i)?' selected':''}>${GEAR_NAMES[i]}</option>`),
+  ].join('');
+
+  const tBadge = CY_TYPES[type];
+  const typeColor = {'const':'#0f2840','accel':'#0f2810','decel':'#2a1008','idle':'#1a1040'}[type];
+  const textColor = {'const':COLORS[3],'accel':COLORS[2],'decel':COLORS[1],'idle':COLORS[4]}[type];
+
+  const tr = document.createElement('tr');
+  tr.id = `cy_row_${idx}`;
+  tr.innerHTML=`
+    <td class="idx-cell">${idx+1}</td>
+    <td style="padding:2px">
+      <select id="cy_type_${idx}" onchange="onCyTypeChange(${idx})"
+        style="background:${typeColor};color:${textColor};border-color:${textColor}40;font-size:.73rem;padding:3px 2px">
+        ${typeOpts}
+      </select></td>
+    <td><input type="number" id="cy_v1_${idx}" value="${seg.v1||0}" step="1"
+      placeholder="km/h" ${type==='idle'?'disabled style="opacity:.3"':''}></td>
+    <td><input type="number" id="cy_v2_${idx}" value="${seg.v2||0}" step="1"
+      placeholder="km/h" ${!showV2?'disabled style="opacity:.3"':''}></td>
+    <td><input type="number" id="cy_param_${idx}" value="${seg.param||0}" step="any"
+      placeholder="${paramPH}"></td>
+    <td><select id="cy_gear_${idx}"
+      style="${!showGear?'opacity:.3;pointer-events:none':''}"
+      onchange="onCyChange()">
+      ${gearOpts}
+    </select></td>
+    <td><button class="cy-del-btn" onclick="deleteCycleRow(${idx})" title="删除此段">✕</button></td>`;
+
+  // bind change events
+  ['cy_v1_','cy_v2_','cy_param_'].forEach(pfx=>{
+    const el=$(pfx+idx);
+    if(el) el.addEventListener('change', ()=>onCyChange());
+  });
+  return tr;
+}
+
+function onCyTypeChange(idx){
+  // Read type change, update row
+  const tEl = $(`cy_type_${idx}`);
+  if(!tEl) return;
+  cycleState.segments[idx].type = tEl.value;
+  // Rebuild just this row
+  const tbody=$('cy_tbody');
+  const oldRow=$(`cy_row_${idx}`);
+  if(oldRow) tbody.replaceChild(makeCycleRow(idx), oldRow);
+  onCyChange();
+}
+
+function onCyChange(){
+  readCycleFromDOM();
+  recalcAll();
+}
+
+function addCycleRow(){
+  const last=cycleState.segments[cycleState.segments.length-1]||{};
+  cycleState.segments.push({
+    type:'const', v1:last.v2||last.v1||50, v2:0, param:100, gear:last.gear||'top'
+  });
+  const tbody=$('cy_tbody');
+  tbody.appendChild(makeCycleRow(cycleState.segments.length-1));
+  onCyChange();
+}
+
+function deleteCycleRow(idx){
+  if(cycleState.segments.length<=1){alert('至少保留1段');return;}
+  cycleState.segments.splice(idx,1);
+  buildCycleTable();
+  recalcAll();
+}
+
+// ═══════════════════════════════════════════════════════════════
+// 渲染函数
+// ═══════════════════════════════════════════════════════════════
+function renderAll(){ renderLoad(); renderPower(); renderFuel(); renderCycle(); renderUniversal(); renderCheck(); }
+
+const CHARTSCALES=(xtitle,ytitle,xmin,xmax,ymin,ymax)=>({
+  x:{type:'linear',title:{display:true,text:xtitle,color:'#7090b8',font:{size:13}},
+    min:xmin,max:xmax,grid:{color:'#1e3050'},ticks:{color:'#7090b8'}},
+  y:{title:{display:true,text:ytitle,color:'#7090b8',font:{size:13}},
+    min:ymin,max:ymax,grid:{color:'#1e3050'},ticks:{color:'#7090b8'}}
+});
+const LEGEND={display:true,labels:{boxWidth:14,font:{size:12},color:'#b0c8e8'}};
+
+function renderLoad(){
+  const r=RESULTS;
+  // Reconstruct load curves from polynomial
+  const ds_load=polyState.speeds.map((n,idx)=>{
+    const peArr=BUILTIN_PE[n]||(()=>{
+      // generate Pe range from 10%~100% of Ttq*n
+      const pemax=Ttq(n)*n*2*Math.PI/60/1000;
+      return Array.from({length:10},(_,i)=>pemax*(i+1)/10);
+    })();
+    const data=peArr.map(pe=>({x:pe,y:clampBe(polyvalAsc(polyState.coeffs[idx]||[300],pe))}));
+    return {label:`${n} r/min`,data,borderColor:COLORS[idx%COLORS.length],
+      backgroundColor:'transparent',borderWidth:2,pointRadius:3,showLine:true,tension:0.2};
+  });
+  // Overlay builtin raw points if they match
+  const ds_raw=polyState.speeds.filter(n=>BUILTIN_PE[n]).map((n,idx)=>({
+    label:`${n} 实测`,
+    data:BUILTIN_PE[n].map((pe,j)=>({x:pe,y:BUILTIN_BE[n][j]})),
+    borderColor:'transparent',backgroundColor:COLORS[idx%COLORS.length]+'80',
+    pointRadius:5,showLine:false,
+  }));
+
+  $('load_model_tag').textContent=`${polyState.deg}阶多项式 · ${polyState.speeds.length}个转速`;
+  mkChart('chart_load',{type:'scatter',data:{datasets:[...ds_load,...ds_raw]},
+    options:{responsive:true,animation:{duration:300},plugins:{legend:LEGEND},
+      scales:CHARTSCALES('功率 Pe (kW)','燃油消耗率 be (g/kW·h)',0,60,250,750)}});
+
+  mkChart('chart_outer',{type:'line',data:{datasets:[
+    {label:'扭矩 Ttq (N·m)',data:r.n_outer.map((n,i)=>({x:n,y:r.Ttq_outer[i]})),
+     borderColor:'#ff6b5a',borderWidth:2.5,pointRadius:0,yAxisID:'y'},
+    {label:'功率 Pe (kW)',data:r.n_outer.map((n,i)=>({x:n,y:r.Pe_outer[i]})),
+     borderColor:'#4d9fff',borderWidth:2.5,pointRadius:0,yAxisID:'y2'},
+  ]},options:{responsive:true,animation:{duration:300},plugins:{legend:LEGEND},
+    scales:{
+      x:{type:'linear',title:{display:true,text:'转速 n (r/min)',color:'#7090b8',font:{size:13}},
+        min:500,max:4100,grid:{color:'#1e3050'},ticks:{color:'#7090b8'}},
+      y:{title:{display:true,text:'Ttq (N·m)',color:'#ff6b5a',font:{size:13}},
+        position:'left',grid:{color:'#1e3050'},ticks:{color:'#7090b8'}},
+      y2:{title:{display:true,text:'Pe (kW)',color:'#4d9fff',font:{size:13}},
+        position:'right',grid:{drawOnChartArea:false},ticks:{color:'#7090b8'}},
+    }}});
+
+  const peMax=Math.max(...r.Pe_outer), ttqMax=Math.max(...r.Ttq_outer);
+  const minBe=Math.min(...polyState.speeds.map((n,i)=>{
+    const peArr=BUILTIN_PE[n]||[];
+    return peArr.length>0?Math.min(...peArr.map(pe=>polyvalAsc(polyState.coeffs[i]||[300],pe))):300;
+  }));
+  $('load_cards').innerHTML=[
+    {label:'最大扭矩 Ttq_max',val:ttqMax.toFixed(1),unit:'N·m',note:'外特性峰值',color:'red'},
+    {label:'最大功率 Pe_max',val:peMax.toFixed(1),unit:'kW',note:'外特性峰值',color:'blue'},
+    {label:'最低 be（多项式）',val:minBe.toFixed(0),unit:'g/kW·h',note:'各转速最优工况',color:'green'},
+    {label:'转速测试点数',val:polyState.speeds.length,unit:'个',note:`${polyState.deg}阶多项式拟合`,color:'amber'},
+  ].map(c=>`<div class="card ${c.color}"><div class="card-label">${c.label}</div>
+    <div class="card-val">${c.val}<span class="card-unit">${c.unit}</span></div>
+    <div class="card-note">${c.note}</div></div>`).join('');
+}
+
+function renderPower(){
+  const r=RESULTS,p=r.p;
+  $('power_gear_label').textContent=`${r.gear_type}档变速器`;
+  const ds_pu=r.gear_curves.map((gc,gi)=>({
+    label:`${GEAR_NAMES[gi]}档 ig=${gc.ig}`,
+    data:gc.ua_69.map((ua,i)=>({x:ua,y:gc.Pd_69[i]})).filter(pt=>pt.y>0),
+    borderColor:COLORS[gi],backgroundColor:'transparent',borderWidth:2,pointRadius:0,showLine:true,tension:0.3}));
+  ds_pu.push({label:'行驶阻力 Pr',data:r.ua_top69.map((ua,i)=>({x:ua,y:r.Pr_top69[i]})).filter(pt=>pt.y>0),
+    borderColor:'#e4edf8',borderWidth:2.5,borderDash:[7,3],pointRadius:0,backgroundColor:'transparent',showLine:true});
+  mkChart('chart_power',{type:'scatter',data:{datasets:ds_pu},
+    options:{responsive:true,animation:{duration:300},plugins:{legend:LEGEND},
+      scales:CHARTSCALES('车速 ua (km/h)','功率 P (kW)',0,null,0,60)}});
+
+  const ds_fu=r.gear_curves.map((gc,gi)=>({
+    label:`${GEAR_NAMES[gi]}档`,
+    data:gc.ua_69.map((ua,i)=>({x:ua,y:gc.Ft_69[i]})).filter(pt=>pt.y>0),
+    borderColor:COLORS[gi],backgroundColor:'transparent',borderWidth:2,pointRadius:0,showLine:true,tension:0.3}));
+  ds_fu.push({label:'行驶阻力 F_r',
+    data:r.ua_top69.map((ua,i)=>({x:ua,y:p.m*p.g*p.f+p.CdA*ua*ua/21.15})).filter(pt=>pt.y>0),
+    borderColor:'#e4edf8',borderWidth:2.5,borderDash:[7,3],pointRadius:0,backgroundColor:'transparent',showLine:true});
+  mkChart('chart_fu',{type:'scatter',data:{datasets:ds_fu},
+    options:{responsive:true,animation:{duration:300},plugins:{legend:LEGEND},
+      scales:CHARTSCALES('车速 ua (km/h)','驱动力 / 阻力 (N)',0,null,0,null)}});
+
+  $('power_cards').innerHTML=[
+    {label:'最高车速（顶档）',val:r.u_max.toFixed(1),unit:'km/h',note:`${r.gear_type}档，ig=${r.ig_top}`,color:'blue'},
+    {label:'顶档速度范围',val:`${r.gear_curves[r.gear_type-1].ua_69[0].toFixed(1)}~${r.gear_curves[r.gear_type-1].ua_69[68].toFixed(1)}`,unit:'km/h',note:'nmin~nmax',color:'amber'},
+    {label:'最大驱动力（Ⅰ档）',val:Math.round(Math.max(...r.gear_curves[0].Ft_69)),unit:'N',note:'外特性最大值',color:'red'},
+    {label:'最大驱动功率',val:Math.max(...r.gear_curves[0].Pd_69).toFixed(1),unit:'kW',note:'Ⅰ档峰值',color:'green'},
+  ].map(c=>`<div class="card ${c.color}"><div class="card-label">${c.label}</div>
+    <div class="card-val">${c.val}<span class="card-unit">${c.unit}</span></div>
+    <div class="card-note">${c.note}</div></div>`).join('');
+  $('power_formula').innerHTML=`<div class="fbox"><span class="fc">// 功率平衡图核心公式</span>
+驱动功率：Pd = Ttq(n)·ig·i₀·ηt/r · ua / 3600   [kW]
+          ua = 0.377·r·n/(ig·i₀)   [km/h]
+阻力功率：Pr = (m·g·f·ua/3600 + CdA·ua³/76140) / ηt   [kW]
+          @60km/h: Pr = <span class="fr">${((r.p.m*r.p.g*r.p.f*60/3600+r.p.CdA*Math.pow(60,3)/76140)/r.p.eta).toFixed(2)} kW</span>
+最高车速：Pd_top = Pr  →  ua_max ≈ <span class="fr">${r.u_max.toFixed(1)} km/h</span></div>`;
+}
+
+function renderFuel(){
+  const r=RESULTS;
+  const top=r.gear_curves[r.gear_type-1], sec=r.gear_curves[r.gear_type-2];
+  mkChart('chart_fuel',{type:'scatter',data:{datasets:[
+    {label:`最高档 ${GEAR_NAMES[r.gear_type-1]}（ig=${r.ig_top}）`,
+     data:top.ua_69.map((ua,i)=>({x:ua,y:top.Qs_69[i]})).filter(pt=>pt.x>0&&pt.y>0&&pt.y<50),
+     borderColor:'#4d9fff',borderWidth:2.5,pointRadius:0,showLine:true,tension:0.3},
+    {label:`次高档 ${GEAR_NAMES[r.gear_type-2]}（ig=${r.ig_2nd}）`,
+     data:sec.ua_69.map((ua,i)=>({x:ua,y:sec.Qs_69[i]})).filter(pt=>pt.x>0&&pt.y>0&&pt.y<50),
+     borderColor:'#ff6b5a',borderWidth:2.5,pointRadius:0,showLine:true,tension:0.3},
+  ]},options:{responsive:true,animation:{duration:300},plugins:{legend:LEGEND},
+    scales:CHARTSCALES('车速 ua (km/h)','百公里油耗 Qs (L/100km)',0,null,0,35)}});
+
+  function getQs(gc,u){ const i=gc.ua_69.findIndex(ua=>Math.abs(ua-u)<2.5); return i>=0?gc.Qs_69[i]:null; }
+  const q_top60=getQs(top,60), q_sec60=getQs(sec,60);
+  const validQs=top.Qs_69.filter(q=>q>0&&q<100);
+  const q_min=validQs.length>0?Math.min(...validQs):0;
+  $('fuel_cards').innerHTML=[
+    {label:'60km/h油耗（顶档）',val:q_top60?q_top60.toFixed(2):'—',unit:'L/100km',color:'blue'},
+    {label:'60km/h油耗（次高档）',val:q_sec60?q_sec60.toFixed(2):'—',unit:'L/100km',color:'red'},
+    {label:'最省油车速（顶档）',val:top.ua_69[top.Qs_69.indexOf(q_min)]?.toFixed(0)||'—',unit:'km/h',
+     note:`Qs_min=${q_min.toFixed(2)}L/100km`,color:'green'},
+    {label:'顶档速度范围',val:`${top.ua_69[0].toFixed(1)}~${top.ua_69[68].toFixed(1)}`,unit:'km/h',color:'amber'},
+  ].map(c=>`<div class="card ${c.color}"><div class="card-label">${c.label}</div>
+    <div class="card-val">${c.val}<span class="card-unit">${c.unit}</span></div>
+    ${c.note?`<div class="card-note">${c.note}</div>`:''}</div>`).join('');
+  $('fuel_formula').innerHTML=`<div class="fbox"><span class="fc">// 等速百公里油耗（教材P61公式）</span>
+步骤① 对各测试转速点(ua, be)用多项式拟合（ua空间，${polyState.deg}阶负荷特性→4阶ua拟合）
+步骤② 对69个速度点用 polyval 插值得 be₁ᵢ
+步骤③ 计算：Qs = Pe·be / (1.02·ua·7.15)   [L/100km]
+
+顶档@60km/h: Pe=<span class="fr">${((RESULTS.p.m*RESULTS.p.g*RESULTS.p.f*60/3600+RESULTS.p.CdA*Math.pow(60,3)/76140)/RESULTS.p.eta).toFixed(2)} kW</span>
+Qs = <span class="fr">${q_top60?q_top60.toFixed(2):'—'} L/100km</span>（顶档）  <span class="fr">${q_sec60?q_sec60.toFixed(2):'—'} L/100km</span>（次高档）</div>`;
+}
+
+function renderCycle(){
+  const r=RESULTS;
+  const cy=r.cycle_result;
+  if(!cy||!cy.segments) return;
+
+  const TYPE_BADGE={
+    const:`<span class="cy-type-badge badge-const">等速</span>`,
+    accel:`<span class="cy-type-badge badge-accel">加速</span>`,
+    decel:`<span class="cy-type-badge badge-decel">减速*</span>`,
+    idle:`<span class="cy-type-badge badge-idle">怠速</span>`,
+  };
+
+  const rows=cy.segments.map((seg,i)=>{
+    const pct=cy.totalQ>0?(seg.Q/cy.totalQ*100).toFixed(1):'—';
+    return `<tr>
+      <td class="label">${TYPE_BADGE[seg.type]||''} 第${i+1}段</td>
+      <td style="font-family:var(--sans);font-size:.82rem">${seg.label}</td>
+      <td>${seg.dist.toFixed(1)} m</td>
+      <td>${seg.time.toFixed(1)} s</td>
+      <td class="hi">${seg.Q.toFixed(5)}</td>
+      <td>${pct}%</td>
+      <td style="font-size:.75rem;color:var(--ink3)">${seg.gearLabel}</td>
+    </tr>`;
+  }).join('');
+
+  $('cycle_table').innerHTML='';
+  $('cycle_table').insertAdjacentHTML('afterend',`
+    <table class="wc-table" style="font-size:.85rem">
+      <thead><tr>
+        <th>段</th><th>说明</th><th>行程</th><th>时间</th>
+        <th>耗油量</th><th>占比</th><th>档位</th>
+      </tr></thead>
+      <tbody>${rows}</tbody>
+      <tfoot><tr>
+        <td class="label" colspan="2" style="text-align:right;font-weight:700">合计</td>
+        <td class="hi">${cy.totalDist.toFixed(1)} m</td>
+        <td class="hi">${cy.totalTime.toFixed(1)} s</td>
+        <td class="hi">${cy.totalQ.toFixed(5)}</td>
+        <td colspan="2" class="hi" style="font-size:1rem">
+          Qs = <strong>${cy.Qs.toFixed(3)} L/100km</strong>
+        </td>
+      </tr></tfoot>
+    </table>`);
+
+  $('cycle_cards').innerHTML=[
+    {label:'循环油耗 Qs',val:cy.Qs.toFixed(2),unit:'L/100km',color:'blue'},
+    {label:'循环总行程',val:cy.totalDist.toFixed(0),unit:'m',color:'green'},
+    {label:'循环总时间',val:cy.totalTime.toFixed(1),unit:'s',color:'teal'},
+    {label:'工况段数',val:cy.segments.length,unit:'段',note:`含${cy.segments.filter(s=>s.type==='idle'||s.type==='decel').length}段怠速/减速`,color:'amber'},
+  ].map(c=>`<div class="card ${c.color}"><div class="card-label">${c.label}</div>
+    <div class="card-val">${c.val}<span class="card-unit">${c.unit}</span></div>
+    ${c.note?`<div class="card-note">${c.note}</div>`:''}</div>`).join('');
+
+  // 油耗分布饼图（简易条形）
+  const barHTML=cy.segments.map((seg,i)=>{
+    const pct=cy.totalQ>0?seg.Q/cy.totalQ*100:0;
+    const col=['#4d9fff','#3ddc84','#ffd166','#ff6b5a','#a78bfa','#40d4c0'][i%6];
+    return `<div style="display:flex;align-items:center;gap:6px;margin-bottom:3px;font-size:.78rem">
+      <div style="width:90px;color:var(--ink3);text-align:right;white-space:nowrap;overflow:hidden;
+        text-overflow:ellipsis">${seg.label}</div>
+      <div style="flex:1;background:#1a2840;border-radius:2px;height:14px;position:relative">
+        <div style="width:${Math.min(pct,100)}%;background:${col};height:100%;border-radius:2px;
+          opacity:.85;transition:.3s"></div>
+      </div>
+      <div style="width:36px;text-align:right;font-family:var(--mono);color:${col}">${pct.toFixed(1)}%</div>
+    </div>`;
+  }).join('');
+
+  $('cycle_formula').innerHTML=`<div class="fbox">
+<span class="fc">// 循环工况计算方法（教材P49-50 + 通用扩展）</span>
+等速段：Q = Pe·be·S / (102·ua·γ)  [S:m, ua:km/h, γ:N/L]
+加速段：Q = Σ (Pe_accel·be_accel)/(367.1·γ) × Δt  [梯形积分，Δt=1/(3.6·a)]
+减速段：Q = Qid × Δv/(3.6·a)  [怠速油耗，Δv:km/h]
+怠速段：Q = Qid × t  [t:s]
+
+总油耗：Qs = Q_合计 × 100 / 总行程(m)  [L/100km]
+
+<span class="fc">// 当前循环：${cy.segments.length}段  总行程:${cy.totalDist.toFixed(0)}m  Qs=</span><span class="fr">${cy.Qs.toFixed(3)} L/100km</span>
+<span class="fc">// * 减速段假设怠速运行（离合器分离或熄油）</span>
+</div>
+<div style="background:var(--surf);border:1px solid var(--rule);border-radius:var(--r2);padding:14px 16px;margin-top:10px">
+  <div style="font-size:.88rem;font-weight:700;color:var(--ink2);margin-bottom:10px">📊 各段耗油分布</div>
+  ${barHTML}
+</div>`;
+}
+
+function renderUniversal(){
+  const nArr=[], ttqArr=[];
+  for(let n=600;n<=4000;n+=50) nArr.push(n);
+  for(let t=5;t<=185;t+=3) ttqArr.push(t);
+  const ttqOuter=nArr.map(n=>Ttq(n));
+  const zData=ttqArr.map(ttq=>nArr.map((n,ni)=>{
+    if(ttq>ttqOuter[ni]*1.02||ttq<=0) return null;
+    const Pe=ttq*n*2*Math.PI/60/1000;
+    const be=beFromPoly(n,Pe);
+    return(be<200||be>850)?null:Math.round(be*10)/10;
+  }));
+  const outerN=[],outerT=[],outerZ=[];
+  for(let n=600;n<=4000;n+=20){
+    const tq=Ttq(n);
+    if(tq>0){ outerN.push(n);outerT.push(tq);outerZ.push(beFromPoly(n,tq*n*2*Math.PI/60/1000)); }
+  }
+  const paperBg='#0d1520',gridColor='#2a3d5a',textColor='#b0c8e8',axisColor='#4d9fff';
+  const colorscale=[[0,'#1a0a40'],[0.15,'#0a3a7e'],[0.3,'#0870c0'],[0.45,'#10b090'],
+    [0.6,'#40d080'],[0.72,'#c0d040'],[0.82,'#f0c040'],[0.91,'#f08020'],[1,'#d03020']];
+
+  Plotly.react('chart_universal_3d',[
+    {type:'surface',x:nArr,y:ttqArr,z:zData,colorscale,
+     contours:{z:{show:true,usecolormap:true,project:{z:true},start:270,end:650,size:20,width:2}},
+     opacity:0.92,showscale:true,
+     colorbar:{title:{text:'be (g/kWh)',side:'right',font:{size:13,color:textColor}},
+       tickfont:{size:11,color:textColor},bgcolor:'rgba(0,0,0,0)',bordercolor:gridColor,thickness:16},
+     lighting:{ambient:.7,diffuse:.6,roughness:.3,specular:.4},
+     hovertemplate:'n: %{x} r/min<br>Ttq: %{y} N·m<br>be: %{z:.1f} g/kWh<extra></extra>'},
+    {type:'scatter3d',x:outerN,y:outerT,z:outerZ,mode:'lines',
+     line:{color:'#ff4040',width:5},name:'外特性曲线'},
+    // Test speed planes
+    ...polyState.speeds.map((n,idx)=>{
+      const ts=[]; for(let t=5;t<=Ttq(n)*0.98;t+=5) ts.push(t);
+      return {type:'scatter3d',x:ts.map(()=>n),y:ts,
+        z:ts.map(t=>beFromPoly(n,t*n*2*Math.PI/60/1000)),
+        mode:'lines',line:{color:COLORS[idx%COLORS.length],width:2,dash:'dot'},
+        name:`n=${n}`,opacity:0.7};
+    }),
+  ],{
+    paper_bgcolor:paperBg,margin:{l:0,r:0,t:30,b:0},
+    scene:{
+      xaxis:{title:{text:'转速 n (r/min)',font:{size:13,color:axisColor}},tickfont:{size:11,color:textColor},
+        gridcolor:gridColor,showbackground:true,backgroundcolor:'#0a1628',range:[600,4000]},
+      yaxis:{title:{text:'Ttq (N·m)',font:{size:13,color:axisColor}},tickfont:{size:11,color:textColor},
+        gridcolor:gridColor,showbackground:true,backgroundcolor:'#0a1628'},
+      zaxis:{title:{text:'be (g/kW·h)',font:{size:13,color:axisColor}},tickfont:{size:11,color:textColor},
+        gridcolor:gridColor,showbackground:true,backgroundcolor:'#0a1628',range:[250,750]},
+      camera:{eye:{x:-1.6,y:-1.8,z:1.2}},bgcolor:paperBg,
+      aspectmode:'manual',aspectratio:{x:1.6,y:1.0,z:0.8},
+    },
+    legend:{x:0.02,y:0.98,bgcolor:'rgba(10,22,40,0.8)',bordercolor:gridColor,
+      borderwidth:1,font:{size:11,color:textColor}},
+    font:{color:textColor},
+  },{responsive:true,displayModeBar:true,displaylogo:false});
+
+  Plotly.react('chart_universal_2d',[
+    {type:'contour',x:nArr,y:ttqArr,z:zData,colorscale,
+     contours:{start:270,end:660,size:20,showlabels:true,
+       labelfont:{size:11,color:'#ffffff'}},
+     line:{width:1.5},
+     colorbar:{title:{text:'be (g/kWh)',font:{size:13,color:textColor}},
+       tickfont:{size:11,color:textColor},bgcolor:'rgba(0,0,0,0)',bordercolor:gridColor,thickness:14},
+     hovertemplate:'n: %{x} r/min<br>Ttq: %{y} N·m<br>be: %{z:.1f} g/kWh<extra></extra>'},
+    {type:'scatter',x:outerN,y:outerT,mode:'lines',line:{color:'#ff4040',width:3},name:'外特性'},
+    {type:'scatter',x:polyState.speeds,y:polyState.speeds.map(n=>Ttq(n)*0.5),
+     mode:'markers+text',text:polyState.speeds.map(n=>`${n}`),
+     textposition:'top center',textfont:{size:10,color:'#ffd166'},
+     marker:{size:8,color:'#ffd166',symbol:'diamond'},name:'测试转速'},
+  ],{
+    paper_bgcolor:paperBg,plot_bgcolor:'#0a1628',margin:{l:60,r:20,t:20,b:50},
+    xaxis:{title:{text:'转速 n (r/min)',font:{size:13,color:axisColor}},
+      tickfont:{size:12,color:textColor},gridcolor:gridColor,range:[600,4050]},
+    yaxis:{title:{text:'Ttq (N·m)',font:{size:13,color:axisColor}},
+      tickfont:{size:12,color:textColor},gridcolor:gridColor,range:[0,195]},
+    legend:{x:0.02,y:0.98,bgcolor:'rgba(10,22,40,0.85)',bordercolor:gridColor,
+      borderwidth:1,font:{size:12,color:textColor}},
+    font:{color:textColor},
+  },{responsive:true,displayModeBar:false,displaylogo:false});
+
+  const minBe=Math.min(...zData.flat().filter(v=>v!==null&&v>200));
+  $('universal_note').innerHTML=`<span class="fc">// 万有特性说明 — 多项式重建（${polyState.speeds.length}个转速 × ${polyState.deg}阶 be-Pe 多项式）</span>
+曲面插值方法：对相邻两测试转速的多项式分别求 be，然后按转速线性插值
+X轴：转速 n (r/min) &nbsp;&nbsp; Y轴：扭矩 Ttq (N·m) &nbsp;&nbsp; Z轴/颜色：be (g/kW·h)
+<span class="fr">红线</span>：外特性曲线（功率边界） &nbsp;&nbsp; <span style="color:${COLORS[0]}">彩色虚线</span>：各测试转速切面
+当前最低 be ≈ <span class="fr">${minBe.toFixed(1)} g/kW·h</span>`;
+}
+
+function renderCheck(){
+  const r=RESULTS;
+  const cy=r.cycle_result||{Qs:0,totalDist:0,totalTime:0,segments:[]};
+  $('check_summary').innerHTML=[
+    {label:'变速器',val:r.gear_type+'档',note:r.gear_type===5?'五档（含超速档）':'四档',color:'blue'},
+    {label:'循环油耗 Qs',val:cy.Qs.toFixed(2),unit:'L/100km',note:`${cy.segments.length}段`,color:'green'},
+    {label:'最高车速',val:r.u_max.toFixed(1),unit:'km/h',color:'amber'},
+    {label:'循环行程',val:cy.totalDist.toFixed(0),unit:'m',color:'teal'},
+  ].map(c=>`<div class="card ${c.color}"><div class="card-label">${c.label}</div>
+    <div class="card-val">${c.val||''}<span class="card-unit">${c.unit||''}</span></div>
+    ${c.note?`<div class="card-note">${c.note}</div>`:''}</div>`).join('');
+  const top=r.gear_curves[r.gear_type-1];
+  const ans=[
+    ['最高车速（顶档）',r.u_max.toFixed(1),'km/h','±1'],
+    ['60km/h油耗（顶档）',top.Qs_69[top.ua_69.findIndex(u=>Math.abs(u-60)<2.5)]?.toFixed(2),'L/100km','±0.5'],
+    ['循环油耗 Qs',cy.Qs.toFixed(3),'L/100km',''],
+    ['循环总行程',cy.totalDist.toFixed(0),'m',''],
+    ['循环总时间',cy.totalTime?.toFixed(1)||'—','s',''],
+    ...cy.segments.map((s,i)=>[`第${i+1}段 ${s.label}`,s.Q.toFixed(5),'',''])
+  ];
+  $('check_detail').innerHTML=ans.map(([q,v,u,tol])=>`
+    <div class="check-row"><span class="check-label">${q}</span>
+      <span class="check-val">${v||'—'} <span class="card-unit">${u}</span></span>
+      ${tol?`<span class="check-ref">容差 ${tol} ${u}</span>`:''}</div>`).join('');
+  $('check_points').innerHTML=`<div style="font-size:.95rem;line-height:2.1;color:var(--ink2)">
+    <div style="font-weight:700;color:var(--ink);margin-bottom:10px">📝 学生报告检查（核心项）：</div>
+    ${[['①','功率平衡图','各档驱动功率+阻力Pr，标注最高车速'],
+       ['②','等速油耗（顶档）',`60km/h≈${top.Qs_69[top.ua_69.findIndex(u=>Math.abs(u-60)<2.5)]?.toFixed(1)}L/100km`],
+       ['③','等速油耗（次高档）','与顶档对比同图'],
+       ['④','循环工况计算表',`各段逐一列出，Qs=${cy.Qs.toFixed(2)}L/100km`],
+       ['⑤','万有特性图','等be等值线 + 外特性边界 + 最省油区'],
+    ].map(([n,t,d])=>`<div style="display:flex;gap:12px;padding:8px 0;border-bottom:1px solid var(--rule2)">
+        <span style="font-family:var(--mono);font-weight:700;color:var(--blue);width:28px">${n}</span>
+        <span style="font-weight:600;min-width:175px;color:var(--ink)">${t}</span>
+        <span style="color:var(--ink3);font-size:.88rem">${d}</span></div>`).join('')}
+    <div style="margin-top:12px;padding:10px 14px;background:var(--amber-bg);border-radius:var(--r);
+      border-left:4px solid var(--amber);font-size:.9rem;color:var(--amber)">
+      ⚠ 可在左侧「行驶循环编辑器」自由增删工况段，预设：JB六工况（顶/次高档）·NEDC城市</div></div>`;
+}
+
+function switchTab(name){
+  document.querySelectorAll('.tab').forEach(t=>t.classList.remove('active'));
+  document.querySelectorAll('.page').forEach(p=>p.classList.remove('active'));
+  $('tab_'+name).classList.add('active'); $('page_'+name).classList.add('active');
+}
+
+// ═══════════════════════════════════════════════════════════════
+// 初始化
+// ═══════════════════════════════════════════════════════════════
+buildPolyTable();           // 建多项式表头
+fitFromBuiltin();           // 内置数据拟合 → 触发 recalcAll
+loadPreset('jb_top');       // 默认加载 JB六工况顶档
+document.addEventListener('contextmenu', e => e.preventDefault());
+document.addEventListener('keydown', e => {
+if (e.key === 'F12' || 
+(e.ctrlKey && e.shiftKey && (e.key === 'I' || e.key === 'J' || e.key === 'C')) ||
+(e.ctrlKey && e.key === 'U') ||
+(e.ctrlKey && e.key === 'S')) {
+e.preventDefault();
+return false;
+}
+});
+
+</script>
+<script>
+  document.addEventListener('contextmenu', e => e.preventDefault());
+  document.addEventListener('keydown', e => {
+    if (e.key === 'F12' || 
+        (e.ctrlKey && e.shiftKey && (e.key === 'I' || e.key === 'J' || e.key === 'C')) ||
+        (e.ctrlKey && e.key === 'U') ||
+        (e.ctrlKey && e.key === 'S')) {
+      e.preventDefault();
+      return false;
+    }
+  });
+</script>
+
+</body>
+</html>
